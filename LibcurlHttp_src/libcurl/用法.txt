@@ -1,0 +1,11 @@
+1.先安装：tool/ActivePerl-5.10.1.1007.msi
+2.启动编译：
+  32位：BuildAll32.bat
+  64位：BuildAll64.bat
+  注意：32和64不能同时编译。
+
+3.得到的结果在out目录下。
+  
+编译后的使用：
+在链接的输入项中加入：Ws2_32.lib;Wldap32.lib;libcurl.lib;libeay32.lib;ssleay32.lib;zlibstat.lib;zlibwapi.lib
+在预处理器中加入：CURL_STATICLIB

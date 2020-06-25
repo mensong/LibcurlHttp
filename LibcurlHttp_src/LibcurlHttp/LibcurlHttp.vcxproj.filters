@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="HttpHelper">
+      <UniqueIdentifier>{f8383cd5-d441-407d-a28a-6540938e11cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pystring">
+      <UniqueIdentifier>{5045ffcb-771c-45c7-8e60-fe853e7cb457}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="restclient-cpp">
+      <UniqueIdentifier>{f5c71ee3-7113-4365-ad0b-addd50374911}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HttpClient">
+      <UniqueIdentifier>{da08dca5-81b7-4ee9-8e31-94de32158a1a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpHelper\HttpHelper.h">
+      <Filter>HttpHelper</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpHelper\url.hpp">
+      <Filter>HttpHelper</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpHelper\UrlCoding.h">
+      <Filter>HttpHelper</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pystring\pystring.h">
+      <Filter>pystring</Filter>
+    </ClInclude>
+    <ClInclude Include="LibcurlHttp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpClient\HttpClient.h">
+      <Filter>HttpClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpClient\HttpFileDownload.h">
+      <Filter>HttpClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpHelper\Convertor.h">
+      <Filter>HttpHelper</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpHelper\iconv.h">
+      <Filter>HttpHelper</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\HttpHelper.cpp">
+      <Filter>HttpHelper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\url.cpp">
+      <Filter>HttpHelper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\UrlCoding.cpp">
+      <Filter>HttpHelper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pystring\pystring.cpp">
+      <Filter>pystring</Filter>
+    </ClCompile>
+    <ClCompile Include="..\restclient-cpp\source\connection.cc">
+      <Filter>restclient-cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\restclient-cpp\source\helpers.cc">
+      <Filter>restclient-cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\restclient-cpp\source\restclient.cc">
+      <Filter>restclient-cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="LibcurlHttp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpClient\HttpClient.cpp">
+      <Filter>HttpClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpClient\HttpFileDownload.cpp">
+      <Filter>HttpClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\Convertor.cpp">
+      <Filter>HttpHelper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\win_iconv.cpp">
+      <Filter>HttpHelper</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

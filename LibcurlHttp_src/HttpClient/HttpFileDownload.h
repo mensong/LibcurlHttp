@@ -1,0 +1,28 @@
+#pragma once
+#include "HttpClient.h"
+
+class HttpFileDownload
+	: public HttpClient
+{
+public:
+	HttpFileDownload();
+	virtual ~HttpFileDownload();
+
+	bool SetFileName(const std::string& fileName);
+	std::string GetFileName() const { return m_file; }
+
+	virtual bool Do() override;
+
+protected:
+	virtual void OnDone(CURLcode code) override;
+	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte) override;
+	virtual int OnProgress(double dltotal, double dlnow, double ultotal, double ulnow) override;
+		
+protected:
+	void closeFile();
+
+private:
+	std::string m_file;
+	FILE* m_fd;
+};
+
