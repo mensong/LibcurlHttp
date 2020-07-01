@@ -56,28 +56,26 @@ bool HttpClient::Do()
 	//初始化curl，这个是必须的
 	CURL* curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	//设置方法
-	std::string sMethod = _THIS->GetCustomMothod("GET");
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 	//设置接收数据的回调
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteDataCallback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, _THIS);
 	//设置进度回调函数
+	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);//设为false 下面才能设置进度响应函数
 	curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, _ProgressCallback);
 	curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, _THIS);
 	//设置headers回调函数
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, _HeaderCallback);
 	curl_easy_setopt(curl, CURLOPT_HEADERDATA, _THIS);
 	//支持https
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 	// 设置重定向的最大次数
-	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5);
+	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L);
 	// 设置301、302跳转跟随location
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	/** set user agent */
 	curl_easy_setopt(curl, CURLOPT_USERAGENT, _THIS->GetUserAgent().c_str());
+
 	/** set headers */
 	curl_slist* headerList = NULL;
 	std::string headerString;
@@ -93,6 +91,7 @@ bool HttpClient::Do()
 	}
 	if (headerList)
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
+
 	/** time out */
 	if (_THIS->GetTimeout() > 0)
 	{
@@ -100,13 +99,16 @@ bool HttpClient::Do()
 		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, _THIS->GetTimeout());
 		//接收数据时超时设置，如果10秒内数据未接收完，直接退出
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, _THIS->GetTimeout());
+		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 	}
+
+	//自定义方法
+	std::string sMethod;
 
 	struct curl_httppost* post = NULL;
 	if (_THIS->m_formFields.size() > 0)
 	{
 		sMethod = _THIS->GetCustomMothod("POST");
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 
 		/** Now specify we want to POST data */
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -148,7 +150,6 @@ bool HttpClient::Do()
 	else if (_THIS->m_postData.size() > 0)
 	{
 		sMethod = _THIS->GetCustomMothod("POST");
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 
 		/** Now specify we want to POST data */
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -156,6 +157,13 @@ bool HttpClient::Do()
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, _THIS->m_postData.c_str());
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, _THIS->m_postData.size());
 	}
+	else
+	{
+		sMethod = _THIS->GetCustomMothod("GET");
+	}
+
+	//设置自定义方法
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 
 	//开始执行请求
 	_THIS->m_retCode = curl_easy_perform(curl);
