@@ -19,9 +19,6 @@
     <Filter Include="pystring">
       <UniqueIdentifier>{5045ffcb-771c-45c7-8e60-fe853e7cb457}</UniqueIdentifier>
     </Filter>
-    <Filter Include="restclient-cpp">
-      <UniqueIdentifier>{f5c71ee3-7113-4365-ad0b-addd50374911}</UniqueIdentifier>
-    </Filter>
     <Filter Include="HttpClient">
       <UniqueIdentifier>{da08dca5-81b7-4ee9-8e31-94de32158a1a}</UniqueIdentifier>
     </Filter>
@@ -35,9 +32,6 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\HttpHelper\HttpHelper.h">
-      <Filter>HttpHelper</Filter>
     </ClInclude>
     <ClInclude Include="..\HttpHelper\url.hpp">
       <Filter>HttpHelper</Filter>
@@ -71,9 +65,6 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\HttpHelper\HttpHelper.cpp">
-      <Filter>HttpHelper</Filter>
-    </ClCompile>
     <ClCompile Include="..\HttpHelper\url.cpp">
       <Filter>HttpHelper</Filter>
     </ClCompile>
@@ -82,15 +73,6 @@
     </ClCompile>
     <ClCompile Include="..\pystring\pystring.cpp">
       <Filter>pystring</Filter>
-    </ClCompile>
-    <ClCompile Include="..\restclient-cpp\source\connection.cc">
-      <Filter>restclient-cpp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\restclient-cpp\source\helpers.cc">
-      <Filter>restclient-cpp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\restclient-cpp\source\restclient.cc">
-      <Filter>restclient-cpp</Filter>
     </ClCompile>
     <ClCompile Include="LibcurlHttp.cpp">
       <Filter>源文件</Filter>

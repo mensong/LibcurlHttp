@@ -7,14 +7,19 @@ HttpClient::HttpClient()
 	, m_retCode(CURL_LAST)
 {
 	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36";
-
-	m_finishEvent = CreateEventA(NULL, FALSE, TRUE, NULL);
-	ResetEvent(m_finishEvent);
 }
-
 
 HttpClient::~HttpClient()
 {
+}
+
+const std::string& HttpClient::GetCustomMothod(const std::string& mothodDef /*= "GET"*/) const
+{
+	if (m_customMethod.empty() || m_customMethod == "")
+	{
+		return mothodDef;
+	}
+	return m_customMethod;
 }
 
 void HttpClient::SetHeader(const std::string& key, const std::string& val)
@@ -40,63 +45,29 @@ const std::string& HttpClient::GetHeader(const std::string& key) const
 
 bool HttpClient::Do()
 {
-	if (m_url.empty())
-		return false;
-
 	m_body.clear();
 
-	unsigned  uiThreadID = 0;
-	HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, HttpClient::_DealThread, (void*)this, 0, &uiThreadID);
-	CloseHandle(hThread);
+	HttpClient* _THIS = this;
 
-	return (hThread != NULL);
-}
-
-DWORD HttpClient::Wait()
-{
-	DWORD waitRet = WaitForSingleObject(m_finishEvent, INFINITE);
-	ResetEvent(m_finishEvent);
-	return waitRet;
-}
-
-bool HttpClient::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
-{
-	m_body.append(reinterpret_cast<char*>(pBuffer), nSize*nMemByte);
-	return true;
-}
-
-int HttpClient::OnProgress(double dltotal, double dlnow, double ultotal, double ulnow)
-{
-	return 0;
-}
-
-void HttpClient::OnDone(CURLcode code)
-{
-
-}
-
-#ifdef _WIN32
-unsigned __stdcall
-#else
-void*
-#endif 
-HttpClient::_DealThread(void* arg)
-{
-	HttpClient* _THIS = (HttpClient*)arg;
-	if (!_THIS)
-		return 0;
-
-#if 1
 	std::string url = _THIS->GetUrl().c_str();
+	if (url == "" || url.empty())
+		return false;
 
 	//初始化curl，这个是必须的
 	CURL* curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	//设置方法
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+	std::string sMethod = _THIS->GetCustomMothod("GET");
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 	//设置接收数据的回调
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteDataCallback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, _THIS);
+	//设置进度回调函数
+	curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, _ProgressCallback);
+	curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, _THIS);
+	//设置headers回调函数
+	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, _HeaderCallback);
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, _THIS);
 	//支持https
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
@@ -105,9 +76,6 @@ HttpClient::_DealThread(void* arg)
 	// 设置301、302跳转跟随location
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-	//设置进度回调函数
-	curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, _ProgressCallback);
-	curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, _THIS);
 	/** set user agent */
 	curl_easy_setopt(curl, CURLOPT_USERAGENT, _THIS->GetUserAgent().c_str());
 	/** set headers */
@@ -137,7 +105,9 @@ HttpClient::_DealThread(void* arg)
 	struct curl_httppost* post = NULL;
 	if (_THIS->m_formFields.size() > 0)
 	{
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+		sMethod = _THIS->GetCustomMothod("POST");
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
+
 		/** Now specify we want to POST data */
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
@@ -177,7 +147,9 @@ HttpClient::_DealThread(void* arg)
 	}
 	else if (_THIS->m_postData.size() > 0)
 	{
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+		sMethod = _THIS->GetCustomMothod("POST");
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
+
 		/** Now specify we want to POST data */
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		/** set post fields */
@@ -215,54 +187,26 @@ HttpClient::_DealThread(void* arg)
 		curl_slist_free_all(headerList);
 	//清理curl，和前面的初始化匹配
 	curl_easy_cleanup(curl);
-#else
-	CURL *curl;
-	CURLcode res;
-	curl = curl_easy_init();
-	if (curl) {
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-		curl_easy_setopt(curl, CURLOPT_URL, "http://10.8.202.210:32031/group1/upload");
-		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-		curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
-		struct curl_slist *headers = NULL;
-		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-		curl_mime *mime;
-		curl_mimepart *part;
-		mime = curl_mime_init(curl);
-		part = curl_mime_addpart(mime);
-		curl_mime_name(part, "file");
-		curl_mime_filedata(part, "/C:/Users/Administrator/Desktop/微信图片_20200515193208.png");
-		part = curl_mime_addpart(mime);
-		curl_mime_name(part, "scene");
-		curl_mime_data(part, "default", CURL_ZERO_TERMINATED);
-		part = curl_mime_addpart(mime);
-		curl_mime_name(part, "filename");
-		curl_mime_data(part, "", CURL_ZERO_TERMINATED);
-		part = curl_mime_addpart(mime);
-		curl_mime_name(part, "output");
-		curl_mime_data(part, "json2", CURL_ZERO_TERMINATED);
-		part = curl_mime_addpart(mime);
-		curl_mime_name(part, "path");
-		curl_mime_data(part, "", CURL_ZERO_TERMINATED);
-		part = curl_mime_addpart(mime);
-		curl_mime_name(part, "code");
-		curl_mime_data(part, "", CURL_ZERO_TERMINATED);
-		part = curl_mime_addpart(mime);
-		curl_mime_name(part, "auth_token");
-		curl_mime_data(part, "", CURL_ZERO_TERMINATED);
-		curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-		res = curl_easy_perform(curl);
-		curl_mime_free(mime);
-	}
-	curl_easy_cleanup(curl);
-
-#endif
 
 	_THIS->OnDone(_THIS->m_retCode);
 
-	SetEvent(_THIS->m_finishEvent);
+	return true;
+}
 
+bool HttpClient::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
+{
+	m_body.append(reinterpret_cast<char*>(pBuffer), nSize*nMemByte);
+	return true;
+}
+
+int HttpClient::OnProgress(double dltotal, double dlnow, double ultotal, double ulnow)
+{
 	return 0;
+}
+
+void HttpClient::OnDone(CURLcode code)
+{
+
 }
 
 size_t HttpClient::_WriteDataCallback(void* pBuffer, size_t nSize, size_t nMemByte, void* pParam)
@@ -281,4 +225,30 @@ int HttpClient::_ProgressCallback(void *clientp, double dltotal, double dlnow, d
 	if (!_THIS)
 		return 0;
 	return _THIS->OnProgress(dltotal, dlnow, ultotal, ulnow);
+}
+
+size_t HttpClient::_HeaderCallback(void *data, size_t size, size_t nmemb, void *userdata)
+{
+	HttpClient* _THIS = reinterpret_cast<HttpClient*>(userdata);
+	std::string header(reinterpret_cast<char*>(data), size*nmemb);
+	size_t seperator = header.find_first_of(':');
+	if (std::string::npos == seperator) 
+	{
+		// roll with non seperated headers...
+		trim(header);
+		if (0 == header.length()) 
+		{
+			return (size * nmemb);  // blank line;
+		}
+		_THIS->m_responseHeaders[header].push_back("");
+	}
+	else {
+		std::string key = header.substr(0, seperator);
+		trim(key);
+		std::string value = header.substr(seperator + 1);
+		trim(value);
+		_THIS->m_responseHeaders[key].push_back(value);
+	}
+
+	return (size * nmemb);
 }

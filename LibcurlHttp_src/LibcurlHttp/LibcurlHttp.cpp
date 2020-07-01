@@ -3,7 +3,6 @@
 
 #include "stdafx.h"
 #include "LibcurlHttp.h"
-#include "..\HttpHelper\HttpHelper.h"
 #include "..\HttpClient\HttpFileDownload.h"
 #include "..\HttpHelper\UrlCoding.h"
 #include "..\HttpHelper\Convertor.h"
@@ -12,11 +11,10 @@
 class LibcurlHttpImp
 	: public LibcurlHttp
 {
-private:
-	std::set<char> ms_urlEncodeEscape;
-
 public:
 	LibcurlHttpImp()
+		: m_timeout(0)
+		, m_responseCode(0)
 	{
 		ms_urlEncodeEscape.insert('/');
 		ms_urlEncodeEscape.insert(':');
@@ -29,28 +27,44 @@ public:
 
 	virtual void setTimeout(int t) override
 	{
-		m_http.timeOut = t;
+		m_timeout = t;
 	}
 	
-	virtual int get(const char* url, bool dealRedirect = true) override
+	virtual int get(const char* url) override
 	{
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		return m_http.get(sUrl.c_str(), dealRedirect);
+		//return m_http.get(sUrl.c_str(), dealRedirect);
+
+		HttpClient httpClient;
+		httpClient.SetUrl(sUrl);
+		httpClient.SetTimtout(m_timeout);
+		httpClient.SetUserAgent(m_userAgent);
+		httpClient.SetHeaders(m_requestHeaders);
+		httpClient.SetCustomMothod(m_customMothod);
+				
+		httpClient.Do();
+
+		m_responseCode = httpClient.GetHttpCode();
+		m_responseBody = httpClient.GetBody();
+		m_responseHeaders = httpClient.GetResponseHeaders();
+		
+		m_customMothod = "";
+		return m_responseCode;
 	}	
 
-	virtual int get_a(const char* url, bool dealRedirect, ...)
+	virtual int get_a(const char* url, ...)
 	{
 		va_list argv;
-		va_start(argv, dealRedirect);
+		va_start(argv, url);
 
-		int code = get_b(url, dealRedirect, argv);
+		int code = get_b(url, argv);
 
 		va_end(argv);
 
 		return code;
 	}
 
-	virtual int get_b(const char* url, bool dealRedirect, va_list argv)
+	virtual int get_b(const char* url, va_list argv)
 	{
 		std::string sContet;
 
@@ -74,28 +88,47 @@ public:
 
 		std::string uri = url + std::string("?") + sContet;
 
-		return get(uri.c_str(), dealRedirect);
+		return get(uri.c_str());
 	}
 
-	virtual int post(const char* url, const char* content, int contentLen, bool dealRedirect = true, const char* contentType = "application/x-www-form-urlencoded") override
+	virtual int post(const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded") override
 	{
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		return m_http.post(sUrl.c_str(), content, contentLen, dealRedirect, contentType);
+
+		HttpClient httpClient;
+		httpClient.SetUrl(sUrl);
+		httpClient.SetTimtout(m_timeout);
+		httpClient.SetUserAgent(m_userAgent);
+		httpClient.SetHeaders(m_requestHeaders);
+		httpClient.SetHeader("Content-Type", contentType);
+		httpClient.SetCustomMothod(m_customMothod);
+
+		std::string sData(content, contentLen);
+		httpClient.SetNormalPostData(sData);
+
+		httpClient.Do();
+
+		m_responseCode = httpClient.GetHttpCode();
+		m_responseBody = httpClient.GetBody();
+		m_responseHeaders = httpClient.GetResponseHeaders();
+
+		m_customMothod = "";
+		return m_responseCode;
 	}
 	
-	virtual int post_a(const char* url, bool dealRedirect, ...) override
+	virtual int post_a(const char* url, ...) override
 	{
 		va_list argv;
-		va_start(argv, dealRedirect);
+		va_start(argv, url);
 
-		int code = post_b(url, dealRedirect, argv);
+		int code = post_b(url, argv);
 
 		va_end(argv);
 
 		return code;
 	}
 
-	virtual int post_b(const char* url, bool dealRedirect, va_list argv)
+	virtual int post_b(const char* url, va_list argv)
 	{
 		std::string sContet;
 
@@ -117,7 +150,7 @@ public:
 				sContet += std::string("&") + key + std::string("=") + val;
 		} while (1);
 
-		return post(url, sContet.c_str(), (int)sContet.size(), dealRedirect);
+		return post(url, sContet.c_str(), (int)sContet.size());
 	}
 
 	virtual int postForm_a(const char* url, ...) override
@@ -176,49 +209,43 @@ public:
 		
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
 		client.SetUrl(sUrl.c_str());
-		client.SetTimtout(m_http.timeOut);
-		client.SetUserAgent(m_http.userAgent);
-		client.SetHeaders(m_http.headers);
+		client.SetTimtout(m_timeout);
+		client.SetUserAgent(m_userAgent);
+		client.SetHeaders(m_requestHeaders);
+		client.SetCustomMothod(m_customMothod);
 
 		client.Do();
-		client.Wait();
 
-		int retCode = client.GetHttpCode();
-		m_http.response.body = client.GetBody();
-		return retCode;
-	}
+		m_responseCode = client.GetHttpCode();
+		m_responseBody = client.GetBody();
+		m_responseHeaders = client.GetResponseHeaders();
 
-	virtual const char* getLocation() override
-	{
-		return m_http.getLocation();
+		m_customMothod = "";
+		return m_responseCode;
 	}
-	
-	virtual const char* getBody(int& len) override
-	{
-		const std::string& sBody = m_http.response.body;
-		len = (int)sBody.size();
-		return sBody.c_str();
-	}
-	
-	virtual int getCode() override
-	{
-		return m_http.response.code;
-	}
-
+		
 	virtual void setRequestHeader(const char* key, const char* value) override
 	{
-		m_http.headers[key] = value;
+		if (!key || key[0] == '\0')
+			return;
+		if (!value || value[0] == '\0')
+		{
+			m_requestHeaders.erase(key);
+			return;
+		}
+
+		m_requestHeaders[key] = value;
 	}
 
 	virtual void setUserAgent(const char* val) override
 	{
-		m_http.userAgent = val;
+		m_userAgent = val;
 	}
-	
-	virtual void setMaxRedirectNum(int num) override
+
+	virtual void setCustomMothod(const char* mothod) override
 	{
-		m_http.maxRedirectNum = num;
-	}		
+		m_customMothod = mothod;
+	}
 
 	virtual int download(const char* url, const char* localFileName=NULL) override
 	{
@@ -228,17 +255,86 @@ public:
 		downloader.SetUrl(sUrl.c_str());
 		if (localFileName)
 			downloader.SetFileName(localFileName);
-		downloader.SetTimtout(m_http.timeOut);
-		downloader.SetUserAgent(m_http.userAgent);
-		downloader.SetHeaders(m_http.headers);
+		downloader.SetTimtout(m_timeout);
+		downloader.SetUserAgent(m_userAgent);
+		downloader.SetHeaders(m_requestHeaders);
+		downloader.SetCustomMothod(m_customMothod);
 		
 		downloader.Do();
-		downloader.Wait();
 
-		int retCode = downloader.GetHttpCode();
-		return retCode;
+		m_responseCode = downloader.GetHttpCode();
+		m_responseHeaders = downloader.GetResponseHeaders();
+
+		m_customMothod = "";
+		return m_responseCode;
 	}
 	
+	virtual const char* getBody(int& len) override
+	{
+		const std::string& sBody = m_responseBody;
+		len = (int)sBody.size();
+		return sBody.c_str();
+	}
+
+	virtual int getCode() override
+	{
+		return m_responseCode;
+	}
+
+	virtual int getResponseHeaderKeysCount() override
+	{
+		return m_responseHeaders.size();
+	}
+
+	virtual const char* getResponseHeaderKey(int i) override
+	{
+		if (i >= m_responseHeaders.size())
+			return NULL;
+
+		ResponseHeaderFields::iterator it = m_responseHeaders.begin();
+		while (i--)
+		{
+			++it;
+		}
+
+		return it->first.c_str();
+	}
+
+	virtual int getResponseHeadersCount(const char* key) override
+	{
+		if (!key)
+		{
+			return 0;
+		}
+
+		ResponseHeaderFields::iterator itFinder = m_responseHeaders.find(key);
+		if (itFinder == m_responseHeaders.end())
+		{
+			return 0;
+		}
+		
+		return itFinder->second.size();		
+	}
+
+	virtual const char* getResponseHeader(const char* key, int i) override
+	{
+		if (!key)
+		{
+			return NULL;
+		}
+
+		ResponseHeaderFields::iterator itFinder = m_responseHeaders.find(key);
+		if (itFinder == m_responseHeaders.end())
+		{
+			return NULL;
+		}
+
+		if (i >= itFinder->second.size())
+			return NULL;
+
+		return itFinder->second[i].c_str();
+	}
+
 	virtual const char* UrlGB2312Encode(const char * strIn) override
 	{
 		static std::string ms;
@@ -325,19 +421,17 @@ public:
 	}
 
 private:
-	HttpHelper m_http;
+	int m_timeout;
+	std::string m_userAgent;
+	std::string m_customMothod;
+	std::map<std::string, std::string> m_requestHeaders;
+
+	int m_responseCode;
+	std::string m_responseBody;
+	ResponseHeaderFields m_responseHeaders;
+
+	std::set<char> ms_urlEncodeEscape;	
 };
-
-
-LIBCURLHTTP_API void LoadCookies(const char* file)
-{
-	HttpHelper::LoadCookies(file);
-}
-
-LIBCURLHTTP_API void SaveCookies(const char* file)
-{
-	HttpHelper::SaveCookies(file);
-}
 
 LIBCURLHTTP_API LibcurlHttp* CreateHttp(void)
 {
@@ -374,58 +468,43 @@ LIBCURLHTTP_API void setUserAgent(const char* val)
 	return _instance()->setUserAgent(val);
 }
 
-LIBCURLHTTP_API void setMaxRedirectNum(int num)
+LIBCURLHTTP_API void setCustomMothod(const char* mothod)
 {
-	return _instance()->setMaxRedirectNum(num);
+	return _instance()->setCustomMothod(mothod);
 }
 
-LIBCURLHTTP_API int get(const char* url, bool dealRedirect /*= true*/)
+LIBCURLHTTP_API int get(const char* url)
 {
-	return _instance()->get(url, dealRedirect);
+	return _instance()->get(url);
 }
 
-LIBCURLHTTP_API int get_a(const char* url, bool dealRedirect, ...)
+LIBCURLHTTP_API int get_a(const char* url, ...)
 {
 	va_list argv;
-	va_start(argv, dealRedirect);
+	va_start(argv, url);
 
-	int ret = _instance()->get_b(url, dealRedirect, argv);
+	int ret = _instance()->get_b(url, argv);
 
 	va_end(argv);
 
 	return ret;
 }
 
-LIBCURLHTTP_API int post(const char* url, const char* content, int contentLen, bool dealRedirect /*= true*/, const char* contentType /*= "application/x-www-form-urlencoded"*/)
+LIBCURLHTTP_API int post(const char* url, const char* content, int contentLen, const char* contentType /*= "application/x-www-form-urlencoded"*/)
 {
-	return _instance()->post(url, content, contentLen, dealRedirect, contentType);
+	return _instance()->post(url, content, contentLen, contentType);
 }
 
-LIBCURLHTTP_API int post_a(const char* url, bool dealRedirect, ...)
+LIBCURLHTTP_API int post_a(const char* url, ...)
 {
 	va_list argv;
-	va_start(argv, dealRedirect);
+	va_start(argv, url);
 
-	int ret = _instance()->post_b(url, dealRedirect, argv);
+	int ret = _instance()->post_b(url, argv);
 
 	va_end(argv);
 
 	return ret;
-}
-
-LIBCURLHTTP_API const char* getLocation()
-{
-	return _instance()->getLocation();
-}
-
-LIBCURLHTTP_API const char* getBody(int& len)
-{
-	return _instance()->getBody(len);
-}
-
-LIBCURLHTTP_API int getCode()
-{
-	return _instance()->getCode();
 }
 
 LIBCURLHTTP_API int download(const char* url, const char* localFileName/*=NULL*/)
@@ -443,6 +522,36 @@ LIBCURLHTTP_API int postForm(const char* url, ...)
 	va_end(argv);
 
 	return ret;
+}
+
+LIBCURLHTTP_API const char* getBody(int& len)
+{
+	return _instance()->getBody(len);
+}
+
+LIBCURLHTTP_API int getCode()
+{
+	return _instance()->getCode();
+}
+
+LIBCURLHTTP_API int getResponseHeaderKeysCount()
+{
+	return _instance()->getResponseHeaderKeysCount();
+}
+
+LIBCURLHTTP_API const char* getResponseHeaderKey(int i)
+{
+	return _instance()->getResponseHeaderKey(i);
+}
+
+LIBCURLHTTP_API int getResponseHeadersCount(const char* key)
+{
+	return _instance()->getResponseHeadersCount(key);
+}
+
+LIBCURLHTTP_API const char* getResponseHeader(const char* key, int i)
+{
+	return _instance()->getResponseHeader(key, i);
 }
 
 LIBCURLHTTP_API const char* UrlGB2312Encode(const char * strIn)
@@ -494,4 +603,3 @@ LIBCURLHTTP_API const char* WidebyteToUTF8(const wchar_t * strIn)
 {
 	return _instance()->WidebyteToUTF8(strIn);
 }
-

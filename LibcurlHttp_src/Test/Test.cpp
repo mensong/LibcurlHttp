@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include "LibcurlHttp.h"
 #include <string>
+#include <iostream>
 
 
 std::string ANSItoUTF8(const char* strAnsi)
@@ -81,18 +82,26 @@ int main()
 
 	//FreeLibrary(hDll);
 
-	std::string fileName = HTTP_CLIENT::Ins().AnsiToUTF8("123.fbr");
-	int ret = HTTP_CLIENT::Ins().postForm("http://10.8.202.210:32031/group1/upload",
-		2, "file", "C:\\Users\\Administrator\\Desktop\\启动天正频繁弹框问题解决方法.flv", fileName.c_str(), 
-		1, "scene", "default", 
-		1, "filename", "",
-		1, "output", "json2", 
-		1, "path", "", 
-		1, "code", "", 
-		1, "auth_token", "", 
-		NULL);
+	//HTTP_CLIENT::Ins().setCustomMothod("ILOVEYOU");
+
+	//HTTP_CLIENT::Ins().postForm("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", NULL, 1, "f1", "v1", 1, "f2", "v2", NULL);
+	//HTTP_CLIENT::Ins().postForm("http://10.224.104.3/com1", 1, "f1", "v1", 1, "f2", "v2", NULL);
+	HTTP_CLIENT::Ins().get("https://www.baidu.com");
+
+	//std::string sData = "[\"6514fd5149f04b1d85ced33a70f1e0c1\",\"ef852b274fd741c5bbbc8ad956d3ea0e\"]";
+	//int nCode = HTTP_CLIENT::Ins().post("http://10.224.104.3/com1", sData.data(), sData.size(), true, "application/json; charset=utf-8");
+
 	int nLen = 0;
 	const char* pBody = HTTP_CLIENT::Ins().getBody(nLen);
+	std::wstring ws = HTTP_CLIENT::Ins().UTF8ToWidebyte(pBody);
+	int nk = HTTP_CLIENT::Ins().getResponseHeaderKeysCount();
+	for (int i = 0; i < nk; ++i)
+	{
+		const char* key = HTTP_CLIENT::Ins().getResponseHeaderKey(i);
+		std::cout << key << ":" << HTTP_CLIENT::Ins().getResponseHeader(key, 0) << std::endl;
+	}
+
+	std::wcout << ws.c_str() << std::endl;
 
     return 0;
 }

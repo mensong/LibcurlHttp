@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LibcurlHttp", "LibcurlHttp\LibcurlHttp.vcxproj", "{04F2F0E9-6BE8-452B-A39C-424026482E15}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Test\Test.vcxproj", "{6DDF537D-1D92-4C7B-9072-7150C75322A4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{04F2F0E9-6BE8-452B-A39C-424026482E15} = {04F2F0E9-6BE8-452B-A39C-424026482E15}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

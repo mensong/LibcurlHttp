@@ -2,6 +2,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <cctype>
+#include <algorithm>
+#include <functional>
 #include <curl/curl.h>
 
 enum FormFieldType
@@ -18,11 +21,16 @@ typedef struct FormField
 	std::string fileName;//只有在文件类型才有效
 } FormField;
 
+typedef std::map< std::string, std::vector<std::string> > ResponseHeaderFields;
+
 class HttpClient
 {
 public:
 	HttpClient();
 	virtual ~HttpClient();
+
+	void SetCustomMothod(const std::string& mothod) { m_customMethod = mothod; }
+	const std::string& GetCustomMothod(const std::string& mothodDef = "GET") const;
 
 	void SetUrl(const std::string& url) { m_url = url; }
 	const std::string& GetUrl() const { return m_url; }
@@ -30,7 +38,7 @@ public:
 	void SetUserAgent(const std::string& val) { m_userAgent = val; }
 	const std::string GetUserAgent() const { return m_userAgent; }
 
-	void SetHeaders(const std::map<std::string, std::string> headers) { m_headers = headers; }
+	void SetHeaders(const std::map<std::string, std::string>& headers) { m_headers = headers; }
 	void SetHeader(const std::string& key, const std::string& val);
 	const std::string& GetHeader(const std::string& key) const;
 
@@ -45,18 +53,13 @@ public:
 	//normal post
 	void ResetNormalPost() { m_postData.clear(); }
 	void SetNormalPostData(const std::string& data) { m_postData = data; }
-
-	//get
-	//...
-
+	
 	virtual bool Do();
-
-	DWORD Wait();
-
-
+	
 	CURLcode GetCode() const { return m_retCode; }
 	int GetHttpCode() const { return m_httpCode; }
 	const std::string& GetBody() { return m_body; }
+	const ResponseHeaderFields& GetResponseHeaders() { return m_responseHeaders; };
 
 protected:
 	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte);
@@ -64,23 +67,38 @@ protected:
 	virtual void OnDone(CURLcode code);
 
 protected:
-	static
-#ifdef _WIN32
-		unsigned __stdcall
-#else
-		void*
-#endif
-		_DealThread(void* arg);
-
 	static size_t _WriteDataCallback(void* pBuffer, size_t nSize, size_t nMemByte, void* pParam);
 	static int _ProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
+	static size_t _HeaderCallback(void *data, size_t size, size_t nmemb, void *userdata);
+
+public:
+	// trim from start
+	static inline std::string &ltrim(std::string &s) {  // NOLINT
+		s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+			std::not1(std::ptr_fun<int, int>(std::isspace))));
+		return s;
+	}
+
+	// trim from end
+	static inline std::string &rtrim(std::string &s) { // NOLINT
+		s.erase(std::find_if(s.rbegin(), s.rend(),
+			std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+		return s;
+	}
+
+	// trim from both ends
+	static inline std::string &trim(std::string &s) {  // NOLINT
+		return ltrim(rtrim(s));
+	}
 
 protected:
+	int m_timeout;
+	std::string m_customMethod;
 	std::string m_url;
 	std::string m_userAgent;
-	std::map<std::string, std::string> m_headers;
-	int m_timeout;
 
+	std::map<std::string, std::string> m_headers;
+		
 	/** 
 		如果m_formFields有数据，则post form；
 		如果m_formFields没有数据，m_postData不为空，则normal post；
@@ -92,7 +110,6 @@ protected:
 	CURLcode m_retCode;
 	int m_httpCode;
 	std::string m_body;
-
-	HANDLE m_finishEvent;
+	ResponseHeaderFields m_responseHeaders;
 };
 
