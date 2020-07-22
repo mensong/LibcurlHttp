@@ -29,37 +29,37 @@ public:
 	HttpClient();
 	virtual ~HttpClient();
 
-	void SetCustomMothod(const std::string& mothod) { m_customMethod = mothod; }
-	const std::string& GetCustomMothod(const std::string& mothodDef = "GET") const;
+	virtual void SetCustomMothod(const std::string& mothod) { m_customMethod = mothod; }
+	virtual const std::string& GetCustomMothod(const std::string& mothodDef = "GET") const;
 
-	void SetUrl(const std::string& url) { m_url = url; }
-	const std::string& GetUrl() const { return m_url; }
+	virtual void SetUrl(const std::string& url) { m_url = url; }
+	virtual const std::string& GetUrl() const { return m_url; }
 
-	void SetUserAgent(const std::string& val) { m_userAgent = val; }
-	const std::string GetUserAgent() const { return m_userAgent; }
+	virtual void SetUserAgent(const std::string& val) { m_userAgent = val; }
+	virtual const std::string GetUserAgent() const { return m_userAgent; }
 
-	void SetHeaders(const std::map<std::string, std::string>& headers) { m_headers = headers; }
-	void SetHeader(const std::string& key, const std::string& val);
-	const std::string& GetHeader(const std::string& key) const;
+	virtual void SetHeaders(const std::map<std::string, std::string>& headers) { m_headers = headers; }
+	virtual void SetHeader(const std::string& key, const std::string& val);
+	virtual const std::string& GetHeader(const std::string& key) const;
 
 	//µ•Œª√Î
-	void SetTimtout(int t) { m_timeout = t; }
-	int GetTimeout() const { return m_timeout; }
+	virtual void SetTimtout(int t) { m_timeout = t; }
+	virtual int GetTimeout() const { return m_timeout; }
 		
 	//post form
-	void ResetFormFields() { m_formFields.clear(); }
-	void AddFormField(const FormField& field) { m_formFields.push_back(field); }
+	virtual void ResetFormFields() { m_formFields.clear(); }
+	virtual void AddFormField(const FormField& field) { m_formFields.push_back(field); }
 
 	//normal post
-	void ResetNormalPost() { m_postData.clear(); }
-	void SetNormalPostData(const std::string& data) { m_postData = data; }
+	virtual void ResetNormalPost() { m_postData.clear(); }
+	virtual void SetNormalPostData(const std::string& data) { m_postData = data; }
 	
 	virtual bool Do();
 	
-	CURLcode GetCode() const { return m_retCode; }
-	int GetHttpCode() const { return m_httpCode; }
-	const std::string& GetBody() { return m_body; }
-	const ResponseHeaderFields& GetResponseHeaders() { return m_responseHeaders; };
+	virtual CURLcode GetCode() const { return m_retCode; }
+	virtual int GetHttpCode() const { return m_httpCode; }
+	virtual const std::string& GetBody() { return m_body; }
+	virtual const ResponseHeaderFields& GetResponseHeaders() { return m_responseHeaders; };
 
 protected:
 	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte);

@@ -57,6 +57,12 @@
     <ClInclude Include="..\HttpHelper\iconv.h">
       <Filter>HttpHelper</Filter>
     </ClInclude>
+    <ClInclude Include="HttpClientFC.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpFileDownloadFC.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -88,6 +94,12 @@
     </ClCompile>
     <ClCompile Include="..\HttpHelper\win_iconv.cpp">
       <Filter>HttpHelper</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpClientFC.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpFileDownloadFC.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

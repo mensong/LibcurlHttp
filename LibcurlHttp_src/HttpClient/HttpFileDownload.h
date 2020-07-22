@@ -8,8 +8,8 @@ public:
 	HttpFileDownload();
 	virtual ~HttpFileDownload();
 
-	bool SetFileName(const std::string& fileName);
-	std::string GetFileName() const { return m_file; }
+	virtual bool SetFileName(const std::string& fileName);
+	virtual std::string GetFileName() const { return m_file; }
 
 	virtual bool Do() override;
 
@@ -19,7 +19,7 @@ protected:
 	virtual int OnProgress(double dltotal, double dlnow, double ultotal, double ulnow) override;
 		
 protected:
-	void closeFile();
+	virtual void closeFile();
 
 private:
 	std::string m_file;

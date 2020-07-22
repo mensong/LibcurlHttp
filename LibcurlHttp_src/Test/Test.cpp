@@ -8,25 +8,11 @@
 #include <iostream>
 
 
-std::string ANSItoUTF8(const char* strAnsi)
+int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData)
 {
-	//获取转换为宽字节后需要的缓冲区大小，创建宽字节缓冲区，936为简体中文GB2312代码页  
-	int nLen = MultiByteToWideChar(CP_ACP, NULL, strAnsi, -1, NULL, NULL);
-	WCHAR *wszBuffer = new WCHAR[nLen + 1];
-	nLen = MultiByteToWideChar(CP_ACP, NULL, strAnsi, -1, wszBuffer, nLen);
-	wszBuffer[nLen] = 0;
-	//获取转为UTF8多字节后需要的缓冲区大小，创建多字节缓冲区  
-	nLen = WideCharToMultiByte(CP_UTF8, NULL, wszBuffer, -1, NULL, NULL, NULL, NULL);
-	CHAR *szBuffer = new CHAR[nLen + 1];
-	nLen = WideCharToMultiByte(CP_UTF8, NULL, wszBuffer, -1, szBuffer, nLen, NULL, NULL);
-	szBuffer[nLen] = 0;
-
-	std::string s1 = szBuffer;
-	//内存清理  
-	delete[]wszBuffer;
-	delete[]szBuffer;
-
-	return s1;
+	if (dltotal != 0)
+		printf("%.2f/%.2f = %d%%\n", dlnow, dltotal, (int)((dlnow/dltotal)*100));
+	return 0;
 }
 
 int main()
@@ -86,22 +72,24 @@ int main()
 
 	//HTTP_CLIENT::Ins().postForm("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", NULL, 1, "f1", "v1", 1, "f2", "v2", NULL);
 	//HTTP_CLIENT::Ins().postForm("http://10.224.104.3/com1", 1, "f1", "v1", 1, "f2", "v2", NULL);
-	HTTP_CLIENT::Ins().get("https://www.baidu.com");
+	//HTTP_CLIENT::Ins().get("https://www.baidu.com");
 
 	//std::string sData = "[\"6514fd5149f04b1d85ced33a70f1e0c1\",\"ef852b274fd741c5bbbc8ad956d3ea0e\"]";
 	//int nCode = HTTP_CLIENT::Ins().post("http://10.224.104.3/com1", sData.data(), sData.size(), true, "application/json; charset=utf-8");
 
-	int nLen = 0;
-	const char* pBody = HTTP_CLIENT::Ins().getBody(nLen);
-	std::wstring ws = HTTP_CLIENT::Ins().UTF8ToWidebyte(pBody);
-	int nk = HTTP_CLIENT::Ins().getResponseHeaderKeysCount();
-	for (int i = 0; i < nk; ++i)
-	{
-		const char* key = HTTP_CLIENT::Ins().getResponseHeaderKey(i);
-		std::cout << key << ":" << HTTP_CLIENT::Ins().getResponseHeader(key, 0) << std::endl;
-	}
+	//int nLen = 0;
+	//const char* pBody = HTTP_CLIENT::Ins().getBody(nLen);
+	//std::wstring ws = HTTP_CLIENT::Ins().UTF8ToWidebyte(pBody);
+	//int nk = HTTP_CLIENT::Ins().getResponseHeaderKeysCount();
+	//for (int i = 0; i < nk; ++i)
+	//{
+	//	const char* key = HTTP_CLIENT::Ins().getResponseHeaderKey(i);
+	//	std::cout << key << ":" << HTTP_CLIENT::Ins().getResponseHeader(key, 0) << std::endl;
+	//}
+	//std::wcout << ws.c_str() << std::endl;
 
-	std::wcout << ws.c_str() << std::endl;
+	HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
+	HTTP_CLIENT::Ins().download("http://10.8.163.48:8080/AutoCAD2017_64.zip", "D:\\AutoCAD2017_64.zip");
 
     return 0;
 }

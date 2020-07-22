@@ -6,10 +6,18 @@
 #define LIBCURLHTTP_API extern "C" __declspec(dllimport)
 #endif
 
+//进度回调原型 int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData);
+typedef int(*FN_PROGRESS_CALLBACK)(
+	double dltotal,
+	double dlnow,
+	double ultotal,
+	double ulnow,
+	void* userData);
+
 class LibcurlHttp
 {
 public:
-	//设置超时时长
+	//设置超时时长，单位 秒
 	virtual void setTimeout(int t) = 0;
 	//设置请求头
 	virtual void setRequestHeader(const char* key, const char* value) = 0;
@@ -21,6 +29,9 @@ public:
 	//设置自定义方法
 	//  DELETE PUT HEAD OPTIONS FUCK……，全大写
 	virtual void setCustomMothod(const char* mothod) = 0;
+
+	//设置进度回调
+	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) = 0;
 
 	//http get
 	virtual int get(const char* url) = 0;
@@ -46,7 +57,7 @@ public:
 		
 	//下载网络文件到本地
 	virtual int download(const char* url, const char* localFileName=NULL) = 0;
-		
+	
 	//获得提交后的body内容
 	virtual const char* getBody(int& len) = 0;
 	//获得提交后的返回code
@@ -86,6 +97,7 @@ LIBCURLHTTP_API void setTimeout(int timeout);
 LIBCURLHTTP_API void setRequestHeader(const char* key, const char* value);
 LIBCURLHTTP_API void setUserAgent(const char* val);
 LIBCURLHTTP_API void setCustomMothod(const char* mothod);
+LIBCURLHTTP_API void setProgress(FN_PROGRESS_CALLBACK progress, void* userData);
 
 LIBCURLHTTP_API int get(const char* url);
 LIBCURLHTTP_API int get_a(const char* url, ...);
@@ -122,6 +134,7 @@ typedef void(*FN_setTimeout)(int timeout);
 typedef void(*FN_setRequestHeader)(const char* key, const char* value);
 typedef void(*FN_setUserAgent)(const char* val);
 typedef void(*FN_setCustomMothod)(const char* mothod);
+typedef void(*FN_setProgress)(FN_PROGRESS_CALLBACK progress, void* userData);
 typedef int(*FN_get)(const char* url);
 typedef int(*FN_get_a)(const char* url, ...);
 typedef int(*FN_post)(const char* url, const char* content, int contentLen, const char* contentType);
@@ -157,6 +170,7 @@ typedef const char* (*FN_WidebyteToUTF8)(const wchar_t * strIn);
 	DEF_PROC(__hDll__, setRequestHeader); \
 	DEF_PROC(__hDll__, setUserAgent); \
 	DEF_PROC(__hDll__, setCustomMothod); \
+	DEF_PROC(__hDll__, setProgress); \
 	DEF_PROC(__hDll__, get); \
 	DEF_PROC(__hDll__, get_a); \
 	DEF_PROC(__hDll__, post); \
@@ -215,6 +229,7 @@ public:
 			this->setRequestHeader		=   setRequestHeader;
 			this->setUserAgent			=   setUserAgent;
 			this->setCustomMothod       =   setCustomMothod;
+			this->setProgress			=	setProgress;
 			this->get					=   get;
 			this->get_a					=   get_a;
 			this->post					=   post;
@@ -258,6 +273,7 @@ public:
 	FN_setRequestHeader		setRequestHeader;
 	FN_setUserAgent			setUserAgent;
 	FN_setCustomMothod		setCustomMothod;
+	FN_setProgress			setProgress;
 	FN_get					get;
 	FN_get_a				get_a;
 	FN_post					post;

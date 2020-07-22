@@ -3,7 +3,8 @@
 
 #include "stdafx.h"
 #include "LibcurlHttp.h"
-#include "..\HttpClient\HttpFileDownload.h"
+#include "HttpClientFC.h"
+#include "HttpFileDownloadFC.h"
 #include "..\HttpHelper\UrlCoding.h"
 #include "..\HttpHelper\Convertor.h"
 
@@ -15,6 +16,8 @@ public:
 	LibcurlHttpImp()
 		: m_timeout(0)
 		, m_responseCode(0)
+		, m_progressCallback(NULL)
+		, m_progressUserData(NULL)
 	{
 		ms_urlEncodeEscape.insert('/');
 		ms_urlEncodeEscape.insert(':');
@@ -31,18 +34,25 @@ public:
 	{
 		m_timeout = t;
 	}
+
+	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) override
+	{
+		m_progressCallback = progress;
+		m_progressUserData = userData;
+	}
 	
 	virtual int get(const char* url) override
 	{
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
 		//return m_http.get(sUrl.c_str(), dealRedirect);
 
-		HttpClient httpClient;
+		HttpClientFC httpClient;
 		httpClient.SetUrl(sUrl);
 		httpClient.SetTimtout(m_timeout);
 		httpClient.SetUserAgent(m_userAgent);
 		httpClient.SetHeaders(m_requestHeaders);
 		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 				
 		httpClient.Do();
 
@@ -97,13 +107,14 @@ public:
 	{
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
 
-		HttpClient httpClient;
+		HttpClientFC httpClient;
 		httpClient.SetUrl(sUrl);
 		httpClient.SetTimtout(m_timeout);
 		httpClient.SetUserAgent(m_userAgent);
 		httpClient.SetHeaders(m_requestHeaders);
 		httpClient.SetHeader("Content-Type", contentType);
 		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 
 		std::string sData(content, contentLen);
 		httpClient.SetNormalPostData(sData);
@@ -169,7 +180,7 @@ public:
 	
 	virtual int postForm_b(const char* url, va_list argv) override
 	{
-		HttpClient client;
+		HttpClientFC httpClient;
 
 		int fieldType = 0;
 		char* key = NULL;
@@ -205,22 +216,23 @@ public:
 						ff.fileName = fileName;
 				}
 
-				client.AddFormField(ff);
+				httpClient.AddFormField(ff);
 			}
 		} while (1);
 		
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		client.SetUrl(sUrl.c_str());
-		client.SetTimtout(m_timeout);
-		client.SetUserAgent(m_userAgent);
-		client.SetHeaders(m_requestHeaders);
-		client.SetCustomMothod(m_customMothod);
+		httpClient.SetUrl(sUrl.c_str());
+		httpClient.SetTimtout(m_timeout);
+		httpClient.SetUserAgent(m_userAgent);
+		httpClient.SetHeaders(m_requestHeaders);
+		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 
-		client.Do();
+		httpClient.Do();
 
-		m_responseCode = client.GetHttpCode();
-		m_responseBody = client.GetBody();
-		m_responseHeaders = client.GetResponseHeaders();
+		m_responseCode = httpClient.GetHttpCode();
+		m_responseBody = httpClient.GetBody();
+		m_responseHeaders = httpClient.GetResponseHeaders();
 
 		m_customMothod = "";
 		return m_responseCode;
@@ -251,7 +263,7 @@ public:
 
 	virtual int download(const char* url, const char* localFileName=NULL) override
 	{
-		HttpFileDownload downloader;
+		HttpFileDownloadFC downloader;
 
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
 		downloader.SetUrl(sUrl.c_str());
@@ -261,6 +273,7 @@ public:
 		downloader.SetUserAgent(m_userAgent);
 		downloader.SetHeaders(m_requestHeaders);
 		downloader.SetCustomMothod(m_customMothod);
+		downloader.SetProgress(m_progressCallback, m_progressUserData);
 		
 		downloader.Do();
 
@@ -421,7 +434,7 @@ public:
 			ms = "";
 		return ms.c_str();
 	}
-
+			
 private:
 	int m_timeout;
 	std::string m_userAgent;
@@ -432,7 +445,10 @@ private:
 	std::string m_responseBody;
 	ResponseHeaderFields m_responseHeaders;
 
-	std::set<char> ms_urlEncodeEscape;	
+	std::set<char> ms_urlEncodeEscape;
+
+	FN_PROGRESS_CALLBACK m_progressCallback;
+	void* m_progressUserData;
 };
 
 LIBCURLHTTP_API LibcurlHttp* CreateHttp(void)
@@ -473,6 +489,11 @@ LIBCURLHTTP_API void setUserAgent(const char* val)
 LIBCURLHTTP_API void setCustomMothod(const char* mothod)
 {
 	return _instance()->setCustomMothod(mothod);
+}
+
+LIBCURLHTTP_API void setProgress(FN_PROGRESS_CALLBACK progress, void* userData)
+{
+	_instance()->setProgress(progress, userData);
 }
 
 LIBCURLHTTP_API int get(const char* url)
