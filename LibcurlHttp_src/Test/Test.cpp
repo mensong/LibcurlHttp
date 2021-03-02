@@ -11,12 +11,25 @@
 int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData)
 {
 	if (dltotal != 0)
-		printf("%.2f/%.2f = %d%%\n", dlnow, dltotal, (int)((dlnow/dltotal)*100));
+	{
+		COORD coord;
+		coord.X = 0; coord.Y = 0;
+		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+
+		printf("%.2f/%.2f = %d%%\n", dlnow, dltotal, (int)((dlnow / dltotal) * 100));
+	}
 	return 0;
 }
 
 int main()
 {
+	//È¥³ý¹â±ê
+	HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_CURSOR_INFO ConsoleCursorInfo;
+	GetConsoleCursorInfo(hConsoleOutput, &ConsoleCursorInfo);
+	ConsoleCursorInfo.bVisible = FALSE;
+	SetConsoleCursorInfo(hConsoleOutput, &ConsoleCursorInfo);
+
 	//HMODULE hDll = LoadLibraryA("LibcurlHttp.dll");
 	//if (!hDll)
 	//	return 1;
@@ -89,7 +102,7 @@ int main()
 	//std::wcout << ws.c_str() << std::endl;
 
 	HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
-	HTTP_CLIENT::Ins().download("http://10.8.163.48:8080/AutoCAD2017_64.zip", "D:\\AutoCAD2017_64.zip");
+	int code = HTTP_CLIENT::Ins().download("http://down.winbaicai.com:88/DaBaiCai_v6.0_2007.zip", NULL);
 
     return 0;
 }
