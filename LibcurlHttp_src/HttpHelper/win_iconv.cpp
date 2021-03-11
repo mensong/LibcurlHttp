@@ -821,12 +821,12 @@ win_iconv(iconv_t _cd, const char **inbuf, size_t *inbytesleft, char **outbuf, s
         insize = cd->from.mbtowc(&cd->from, (const uchar *)*inbuf, *inbytesleft, wbuf, &wsize);
         if (insize == -1)
         {
-#if 0//Gergul
+#if 0//Gergul 关闭精准转换
             cd->from.mode = frommode;
             return (size_t)(-1);
 #else
-			*inbuf += insize;
-			*inbytesleft -= insize;
+			*inbuf += 1;
+			*inbytesleft -= 1;
 			continue;
 #endif
         }
@@ -869,13 +869,13 @@ win_iconv(iconv_t _cd, const char **inbuf, size_t *inbytesleft, char **outbuf, s
         outsize = cd->to.wctomb(&cd->to, wbuf, wsize, (uchar *)*outbuf, *outbytesleft);
         if (outsize == -1)
         {
-#if 0//Gergul
+#if 0//Gergul 关闭精准转换
             cd->from.mode = frommode;
             cd->to.mode = tomode;
             return (size_t)(-1);
 #else
-			*inbuf += insize;
-			*inbytesleft -= insize;
+			*inbuf += 1;
+			*inbytesleft -= 1;
 			continue;
 #endif
         }
