@@ -83,9 +83,18 @@ int main()
 
 	//HTTP_CLIENT::Ins().setCustomMothod("ILOVEYOU");
 
-	//HTTP_CLIENT::Ins().postForm("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", NULL, 1, "f1", "v1", 1, "f2", "v2", NULL);
-	//HTTP_CLIENT::Ins().postForm("http://10.224.104.3/com1", 1, "f1", "v1", 1, "f2", "v2", NULL);
+	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", NULL, 1, "f1", "v1", 1, "f2", "v2", NULL);
+	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", "idgcs-min.zip", 1, "f1", "v1", 1, "f2", "v2", NULL);
+	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 1, "f1", "v1", 1, "f2", "v2", NULL);
 	//HTTP_CLIENT::Ins().get("https://www.baidu.com");
+
+	/*
+	FORM_FIELD* fields = new FORM_FIELD[2];
+	FillFormField(fields[0], 0, "a", "1", "");
+	FillFormField(fields[1], 1, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", "idgcs-min.zip");
+	HTTP_CLIENT::Ins().postForm("http://10.224.104.3/com1", fields, 2);
+	delete[] fields;
+	*/
 
 	//std::string sData = "[\"6514fd5149f04b1d85ced33a70f1e0c1\",\"ef852b274fd741c5bbbc8ad956d3ea0e\"]";
 	//int nCode = HTTP_CLIENT::Ins().post("http://10.224.104.3/com1", sData.data(), sData.size(), true, "application/json; charset=utf-8");
@@ -101,8 +110,10 @@ int main()
 	//}
 	//std::wcout << ws.c_str() << std::endl;
 
-	HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
-	int code = HTTP_CLIENT::Ins().download("http://down.winbaicai.com:88/DaBaiCai_v6.0_2007.zip", NULL);
+	//HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
+	//int code = HTTP_CLIENT::Ins().download("http://download.rz520.com/small/photoshopcs6.zip", NULL);
+
+	HTTP_CLIENT::Ins().get("https://www.baidu.com");
 
     return 0;
 }

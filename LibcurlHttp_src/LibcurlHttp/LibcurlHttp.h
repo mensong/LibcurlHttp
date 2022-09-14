@@ -14,6 +14,20 @@ typedef int(*FN_PROGRESS_CALLBACK)(
 	double ulnow,
 	void* userData);
 
+typedef struct FORM_FIELD
+{
+	int fieldType;//0=普通字段；1=文件字段
+	char fieldName[256];
+	char fieldValue[MAX_PATH];//字段值或文件路径
+	char fileName[MAX_PATH];//只有在文件类型才有效
+} FORM_FIELD;
+
+#define FillFormField(target, _fieldType, _fieldName, _fieldValue, _fileName) \
+	target.fieldType = _fieldType; \
+	if (_fieldName) strcpy(target.fieldName, _fieldName); \
+	if (_fieldValue) strcpy(target.fieldValue, _fieldValue); \
+	if (_fileName) strcpy(target.fileName, _fileName); 
+
 class LibcurlHttp
 {
 public:
@@ -33,6 +47,11 @@ public:
 	//设置进度回调
 	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) = 0;
 
+	//设置是否自动重定向
+	virtual void setAutoRedirect(bool autoRedirect) = 0;
+	//设置自动重定向次数
+	virtual void setMaxRedirect(int maxRedirect) = 0;
+
 	//http get
 	virtual int get(const char* url) = 0;
 	//http get
@@ -48,9 +67,11 @@ public:
 	//  不定参数为成对的形式出现，并且后面一定有一个NULL标志不定参数的结束。
 	virtual int post_a(const char* url, ...) = 0;
 	virtual int post_b(const char* url, va_list argv) = 0;
+
 	//提交表单
+	virtual int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData) = 0;
 	// url, fieldtype1(1:普通字段；2:file字段), fieldname1, fieldvalue1, [如果fieldtype1==2则存在]fileName1,    
-	//      fieldtype2(1:普通字段；2:file字段), fieldname2, fieldvalue2, [如果fieldtype2==1则存在]fileName2, 
+	//      fieldtype2(1:普通字段；2:file字段), fieldname2, fieldvalue2, [如果fieldtype2==2则存在]fileName2, 
 	//      ……, NULL
 	virtual int postForm_a(const char* url, ...) = 0;
 	virtual int postForm_b(const char* url, va_list argv) = 0;
@@ -98,13 +119,16 @@ LIBCURLHTTP_API void setRequestHeader(const char* key, const char* value);
 LIBCURLHTTP_API void setUserAgent(const char* val);
 LIBCURLHTTP_API void setCustomMothod(const char* mothod);
 LIBCURLHTTP_API void setProgress(FN_PROGRESS_CALLBACK progress, void* userData);
+LIBCURLHTTP_API void setAutoRedirect(bool autoRedirect);
+LIBCURLHTTP_API void setMaxRedirect(int maxRedirect);
 
 LIBCURLHTTP_API int get(const char* url);
 LIBCURLHTTP_API int get_a(const char* url, ...);
 LIBCURLHTTP_API int post(const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
 LIBCURLHTTP_API int post_a(const char* url, ...);
 LIBCURLHTTP_API int download(const char* url, const char* localFileName = NULL);
-LIBCURLHTTP_API int postForm(const char* url, ...);
+LIBCURLHTTP_API int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData);
+LIBCURLHTTP_API int postForm_a(const char* url, ...);
 
 LIBCURLHTTP_API const char* getBody(int& len);
 LIBCURLHTTP_API int getCode();
@@ -135,12 +159,15 @@ typedef void(*FN_setRequestHeader)(const char* key, const char* value);
 typedef void(*FN_setUserAgent)(const char* val);
 typedef void(*FN_setCustomMothod)(const char* mothod);
 typedef void(*FN_setProgress)(FN_PROGRESS_CALLBACK progress, void* userData);
+typedef void(*FN_setAutoRedirect)(bool autoRedirect);
+typedef void(*FN_setMaxRedirect)(int maxRedirect);
 typedef int(*FN_get)(const char* url);
 typedef int(*FN_get_a)(const char* url, ...);
 typedef int(*FN_post)(const char* url, const char* content, int contentLen, const char* contentType);
 typedef int(*FN_post_a)(const char* url, ...);
 typedef int(*FN_download)(const char* url, const char* localFileName);
-typedef int(*FN_postForm)(const char* url, ...);
+typedef int(*FN_postForm)(const char* url, FORM_FIELD* formData, int nSizeFormData);
+typedef int(*FN_postForm_a)(const char* url, ...);
 typedef const char* (*FN_getBody)(int& len);
 typedef int (*FN_getCode)();
 typedef int (*FN_getResponseHeaderKeysCount)();
@@ -171,12 +198,15 @@ typedef const char* (*FN_WidebyteToUTF8)(const wchar_t * strIn);
 	DEF_PROC(__hDll__, setUserAgent); \
 	DEF_PROC(__hDll__, setCustomMothod); \
 	DEF_PROC(__hDll__, setProgress); \
+	DEF_PROC(__hDll__, setAutoRedirect); \
+	DEF_PROC(__hDll__, setMaxRedirect); \
 	DEF_PROC(__hDll__, get); \
 	DEF_PROC(__hDll__, get_a); \
 	DEF_PROC(__hDll__, post); \
 	DEF_PROC(__hDll__, post_a); \
 	DEF_PROC(__hDll__, download); \
 	DEF_PROC(__hDll__, postForm); \
+	DEF_PROC(__hDll__, postForm_a); \
 	DEF_PROC(__hDll__, getBody); \
 	DEF_PROC(__hDll__, getCode); \
 	DEF_PROC(__hDll__, getResponseHeaderKeysCount); \
@@ -230,12 +260,15 @@ public:
 			this->setUserAgent			=   setUserAgent;
 			this->setCustomMothod       =   setCustomMothod;
 			this->setProgress			=	setProgress;
+			this->setAutoRedirect		=	setAutoRedirect;
+			this->setMaxRedirect		=	setMaxRedirect;
 			this->get					=   get;
 			this->get_a					=   get_a;
 			this->post					=   post;
 			this->post_a				=   post_a;
 			this->download				=   download; 
 			this->postForm				=   postForm; 
+			this->postForm_a			=   postForm_a; 
 			this->getBody				=   getBody; 
 			this->getCode				=   getCode;
 			this->getResponseHeaderKeysCount = getResponseHeaderKeysCount;
@@ -274,12 +307,15 @@ public:
 	FN_setUserAgent			setUserAgent;
 	FN_setCustomMothod		setCustomMothod;
 	FN_setProgress			setProgress;
+	FN_setAutoRedirect		setAutoRedirect;
+	FN_setMaxRedirect		setMaxRedirect;
 	FN_get					get;
 	FN_get_a				get_a;
 	FN_post					post;
 	FN_post_a				post_a;
 	FN_download				download;
 	FN_postForm				postForm;
+	FN_postForm_a			postForm_a;
 	FN_getBody				getBody;
 	FN_getCode				getCode;
 	FN_getResponseHeaderKeysCount getResponseHeaderKeysCount;

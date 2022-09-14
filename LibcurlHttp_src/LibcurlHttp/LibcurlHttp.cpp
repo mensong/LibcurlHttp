@@ -18,6 +18,8 @@ public:
 		, m_responseCode(0)
 		, m_progressCallback(NULL)
 		, m_progressUserData(NULL)
+		, m_autoRedirect(true)
+		, m_maxRedirect(5)
 	{
 		ms_urlEncodeEscape.insert('/');
 		ms_urlEncodeEscape.insert(':');
@@ -27,7 +29,7 @@ public:
 		ms_urlEncodeEscape.insert('\\');
 		ms_urlEncodeEscape.insert('=');
 
-		m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36";
+		m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
 	}
 
 	virtual void setTimeout(int t) override
@@ -39,6 +41,17 @@ public:
 	{
 		m_progressCallback = progress;
 		m_progressUserData = userData;
+	}
+
+	virtual void setAutoRedirect(bool autoRedirect) override
+	{
+		m_autoRedirect = autoRedirect;
+	}
+
+
+	virtual void setMaxRedirect(int maxRedirect) override
+	{
+		m_maxRedirect = maxRedirect;
 	}
 	
 	virtual int get(const char* url) override
@@ -53,6 +66,8 @@ public:
 		httpClient.SetHeaders(m_requestHeaders);
 		httpClient.SetCustomMothod(m_customMothod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
+		httpClient.SetAutoRedirect(m_autoRedirect);
+		httpClient.SetMaxRedirect(m_maxRedirect);
 				
 		httpClient.Do();
 
@@ -97,8 +112,14 @@ public:
 			else
 				sContet += std::string("&") + key + std::string("=") + val;
 		} while (1);
-
-		std::string uri = url + std::string("?") + sContet;
+				
+		std::string uri = url;
+		if (uri.find('?') == std::string::npos)
+			uri += std::string("?") + sContet;
+		else if (uri.size() > 0 && uri[uri.size()-1] != '?')//存在参数
+			uri += std::string("&") + sContet;
+		else//http://xxx/xx?
+			uri += sContet;
 
 		return get(uri.c_str());
 	}
@@ -115,9 +136,15 @@ public:
 		httpClient.SetHeader("Content-Type", contentType);
 		httpClient.SetCustomMothod(m_customMothod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
+		httpClient.SetAutoRedirect(m_autoRedirect);
+		httpClient.SetMaxRedirect(m_maxRedirect);
 
 		std::string sData(content, contentLen);
 		httpClient.SetNormalPostData(sData);
+		if (contentLen == 0)
+		{//防止post空内容时出现411错误
+			httpClient.SetHeader("Content-Length", "0");
+		}
 
 		httpClient.Do();
 
@@ -164,6 +191,52 @@ public:
 		} while (1);
 
 		return post(url, sContet.c_str(), (int)sContet.size());
+	}
+
+	virtual int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData)
+	{
+		HttpClientFC httpClient;
+
+		for (int i = 0; i < nSizeFormData; ++i)
+		{
+			FormField ff;
+			if (!formData[i].fieldName)
+				continue;
+			ff.fieldName = formData[i].fieldName;
+			ff.fieldValue = formData[i].fieldValue ? formData[i].fieldValue : "";
+			if (formData[i].fieldType == (int)ftNormal)
+				ff.fieldType = ftNormal;
+			else if (formData[i].fieldType == (int)ftFile)
+			{
+				ff.fieldType = ftFile;
+				ff.fileName = formData[i].fileName ? formData[i].fileName : "";
+			}
+
+			httpClient.AddFormField(ff);
+		}
+
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
+		httpClient.SetUrl(sUrl.c_str());
+		httpClient.SetTimtout(m_timeout);
+		httpClient.SetUserAgent(m_userAgent);
+		httpClient.SetHeaders(m_requestHeaders);
+		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetProgress(m_progressCallback, m_progressUserData);
+		httpClient.SetAutoRedirect(m_autoRedirect);
+		httpClient.SetMaxRedirect(m_maxRedirect);
+		if (nSizeFormData == 0)
+		{//防止post空内容时出现411错误
+			httpClient.SetHeader("Content-Length", "0");
+		}
+
+		httpClient.Do();
+
+		m_responseCode = httpClient.GetHttpCode();
+		m_responseBody = httpClient.GetBody();
+		m_responseHeaders = httpClient.GetResponseHeaders();
+
+		m_customMothod = "";
+		return m_responseCode;
 	}
 
 	virtual int postForm_a(const char* url, ...) override
@@ -227,6 +300,12 @@ public:
 		httpClient.SetHeaders(m_requestHeaders);
 		httpClient.SetCustomMothod(m_customMothod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
+		httpClient.SetAutoRedirect(m_autoRedirect);
+		httpClient.SetMaxRedirect(m_maxRedirect);
+		if (httpClient.GetFormField().size() == 0)
+		{//防止post空内容时出现411错误
+			httpClient.SetHeader("Content-Length", "0");
+		}
 
 		httpClient.Do();
 
@@ -242,7 +321,7 @@ public:
 	{
 		if (!key || key[0] == '\0')
 			return;
-		if (!value || value[0] == '\0')
+		if (!value)
 		{
 			m_requestHeaders.erase(key);
 			return;
@@ -274,6 +353,8 @@ public:
 		downloader.SetHeaders(m_requestHeaders);
 		downloader.SetCustomMothod(m_customMothod);
 		downloader.SetProgress(m_progressCallback, m_progressUserData);
+		downloader.SetAutoRedirect(m_autoRedirect);
+		downloader.SetMaxRedirect(m_maxRedirect);
 		
 		downloader.Do();
 
@@ -298,12 +379,12 @@ public:
 
 	virtual int getResponseHeaderKeysCount() override
 	{
-		return m_responseHeaders.size();
+		return (int)m_responseHeaders.size();
 	}
 
 	virtual const char* getResponseHeaderKey(int i) override
 	{
-		if (i >= m_responseHeaders.size())
+		if (i >= (int)m_responseHeaders.size())
 			return NULL;
 
 		ResponseHeaderFields::iterator it = m_responseHeaders.begin();
@@ -328,7 +409,7 @@ public:
 			return 0;
 		}
 		
-		return itFinder->second.size();		
+		return (int)itFinder->second.size();		
 	}
 
 	virtual const char* getResponseHeader(const char* key, int i) override
@@ -344,7 +425,7 @@ public:
 			return NULL;
 		}
 
-		if (i >= itFinder->second.size())
+		if (i >= (int)itFinder->second.size())
 			return NULL;
 
 		return itFinder->second[i].c_str();
@@ -434,12 +515,15 @@ public:
 			ms = "";
 		return ms.c_str();
 	}
-			
+	
 private:
 	int m_timeout;
 	std::string m_userAgent;
 	std::string m_customMothod;
 	std::map<std::string, std::string> m_requestHeaders;
+
+	bool m_autoRedirect;
+	int m_maxRedirect;
 
 	int m_responseCode;
 	std::string m_responseBody;
@@ -496,6 +580,16 @@ LIBCURLHTTP_API void setProgress(FN_PROGRESS_CALLBACK progress, void* userData)
 	_instance()->setProgress(progress, userData);
 }
 
+LIBCURLHTTP_API void setAutoRedirect(bool autoRedirect)
+{
+	_instance()->setAutoRedirect(autoRedirect);
+}
+
+LIBCURLHTTP_API void setMaxRedirect(int maxRedirect)
+{
+	_instance()->setMaxRedirect(maxRedirect);
+}
+
 LIBCURLHTTP_API int get(const char* url)
 {
 	return _instance()->get(url);
@@ -535,7 +629,12 @@ LIBCURLHTTP_API int download(const char* url, const char* localFileName/*=NULL*/
 	return _instance()->download(url, localFileName);
 }
 
-LIBCURLHTTP_API int postForm(const char* url, ...)
+LIBCURLHTTP_API int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData)
+{
+	return _instance()->postForm(url, formData, nSizeFormData);
+}
+
+LIBCURLHTTP_API int postForm_a(const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);

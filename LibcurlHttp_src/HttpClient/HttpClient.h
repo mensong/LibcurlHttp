@@ -29,6 +29,7 @@ public:
 	HttpClient();
 	virtual ~HttpClient();
 
+	//设置请求方法，一般为：OPTIONS GET POST PUT HEAD DELETE TRACE CONNECT，还可以为其它任意字符串
 	virtual void SetCustomMothod(const std::string& mothod) { m_customMethod = mothod; }
 	virtual const std::string& GetCustomMothod(const std::string& mothodDef = "GET") const;
 
@@ -38,6 +39,12 @@ public:
 	virtual void SetUserAgent(const std::string& val) { m_userAgent = val; }
 	virtual const std::string GetUserAgent() const { return m_userAgent; }
 
+	virtual void SetAutoRedirect(bool autoRedirect) { m_autoRedirect = autoRedirect; }
+	virtual bool GetAutoRedirect() { return m_autoRedirect; }
+
+	virtual void SetMaxRedirect(int maxRedirect) { m_maxRedirect = maxRedirect; }
+	virtual int GetMaxRedirect() { return m_maxRedirect; }
+
 	virtual void SetHeaders(const std::map<std::string, std::string>& headers) { m_headers = headers; }
 	virtual void SetHeader(const std::string& key, const std::string& val);
 	virtual const std::string& GetHeader(const std::string& key) const;
@@ -45,17 +52,19 @@ public:
 	//单位秒
 	virtual void SetTimtout(int t) { m_timeout = t; }
 	virtual int GetTimeout() const { return m_timeout; }
-		
+
 	//post form
-	virtual void ResetFormFields() { m_formFields.clear(); }
-	virtual void AddFormField(const FormField& field) { m_formFields.push_back(field); }
+	virtual void ResetFormFields() { m_formFields.clear(); m_isInnerPost = false; }
+	virtual void AddFormField(const FormField& field) { m_formFields.push_back(field); m_isInnerPost = true; }
+	virtual const std::vector<FormField>& GetFormField() { return m_formFields; }
 
 	//normal post
-	virtual void ResetNormalPost() { m_postData.clear(); }
-	virtual void SetNormalPostData(const std::string& data) { m_postData = data; }
-	
+	virtual void ResetNormalPost() { m_postData.clear(); m_isInnerPost = false; }
+	virtual void SetNormalPostData(const std::string& data) { m_postData = data; m_isInnerPost = true; }
+	virtual const std::string& GetNormalPostData() { return m_postData; }
+
 	virtual bool Do();
-	
+
 	virtual CURLcode GetCode() const { return m_retCode; }
 	virtual int GetHttpCode() const { return m_httpCode; }
 	virtual const std::string& GetBody() { return m_body; }
@@ -94,12 +103,15 @@ public:
 protected:
 	int m_timeout;
 	std::string m_customMethod;
+	bool m_isInnerPost;
 	std::string m_url;
 	std::string m_userAgent;
+	bool m_autoRedirect;
+	int m_maxRedirect;
 
 	std::map<std::string, std::string> m_headers;
-		
-	/** 
+
+	/**
 		如果m_formFields有数据，则post form；
 		如果m_formFields没有数据，m_postData不为空，则normal post；
 		否则get

@@ -5,8 +5,11 @@
 HttpClient::HttpClient()
 	: m_timeout(0)
 	, m_retCode(CURL_LAST)
+	, m_autoRedirect(true)
+	, m_maxRedirect(5)
+	, m_isInnerPost(false)
 {
-	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36";
+	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
 }
 
 HttpClient::~HttpClient()
@@ -69,10 +72,12 @@ bool HttpClient::Do()
 	//支持https
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-	// 设置重定向的最大次数
-	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L);
+	
 	// 设置301、302跳转跟随location
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, m_autoRedirect? 1L : 0L);
+	// 设置重定向的最大次数
+	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, m_maxRedirect);
+
 	/** set user agent */
 	curl_easy_setopt(curl, CURLOPT_USERAGENT, _THIS->GetUserAgent().c_str());
 
@@ -82,7 +87,7 @@ bool HttpClient::Do()
 	for (std::map<std::string, std::string>::iterator it = _THIS->m_headers.begin();
 		it != _THIS->m_headers.end(); ++it)
 	{
-		if (it->first.empty() || it->second.empty())
+		if (it->first.empty())
 			continue;
 		headerString = it->first;
 		headerString += ": ";
@@ -97,25 +102,23 @@ bool HttpClient::Do()
 	{
 		//连接超时，这个数值如果设置太短可能导致数据请求不到就断开了
 		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, _THIS->GetTimeout());
-		//接收数据时超时设置，如果10秒内数据未接收完，直接退出
+		//接收数据时超时设置，如果GetTimeout()秒内数据未接收完，直接退出
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, _THIS->GetTimeout());
 		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 	}
 
 	//自定义方法
 	std::string sMethod;
-
 	struct curl_httppost* post = NULL;
 	if (_THIS->m_formFields.size() > 0)
 	{
 		sMethod = _THIS->GetCustomMothod("POST");
 
-		/** Now specify we want to POST data */
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
 		//post form
 		struct curl_httppost* last = NULL;
-		for (int i = 0; i < _THIS->m_formFields.size(); ++i)
+		for (int i = 0; i < (int)_THIS->m_formFields.size(); ++i)
 		{
 			CURLFORMcode formCode = CURL_FORMADD_NULL;
 			FormField& ff = _THIS->m_formFields[i];
@@ -151,17 +154,19 @@ bool HttpClient::Do()
 	{
 		sMethod = _THIS->GetCustomMothod("POST");
 
-		/** Now specify we want to POST data */
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
 		/** set post fields */
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, _THIS->m_postData.c_str());
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, _THIS->m_postData.size());
 	}
 	else
 	{
-		sMethod = _THIS->GetCustomMothod("GET");
+		if (m_isInnerPost)
+			sMethod = _THIS->GetCustomMothod("POST");
+		else
+			sMethod = _THIS->GetCustomMothod("GET");
 	}
-
 	//设置自定义方法
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 
