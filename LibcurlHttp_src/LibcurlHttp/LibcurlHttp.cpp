@@ -431,89 +431,98 @@ public:
 		return itFinder->second[i].c_str();
 	}
 
-	virtual const char* UrlGB2312Encode(const char * strIn) override
+	const char* UrlGB2312Encode(const char * strIn) override
 	{
-		static std::string ms;
 		std::string s = UrlCoding::UrlGB2312Encode(strIn);
-		ms = s;
-		return ms.c_str();
+		m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 
-	virtual const char* UrlGB2312Decode(const char * strIn) override
+	const char* UrlGB2312Decode(const char * strIn) override
 	{
-		static std::string ms;
 		std::string s = UrlCoding::UrlGB2312Decode(strIn);
-		ms = s;
-		return ms.c_str();
+		m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 
 	virtual const char* UrlUTF8Encode(const char * strIn) override
 	{
-		static std::string ms;
 		std::string s = UrlCoding::UrlUTF8Encode(strIn);
-		ms = s;
-		return ms.c_str();
+		m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 
 	virtual const char* UrlUTF8Decode(const char * strIn) override
 	{
 		static std::string ms;
 		std::string s = UrlCoding::UrlUTF8Decode(strIn);
-		ms = s;
-		return ms.c_str();
+		m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 
 
 	virtual const char* WidebyteToAnsi(const wchar_t * strIn) override
 	{
-		static std::string ms;
-		if (!GL::WideByte2Ansi(ms, strIn))
-			ms = "";
-		return ms.c_str();
+		std::string s;
+		if (!GL::WideByte2Ansi(s, strIn))
+			m_convertBuffA.assign("");
+		else
+			m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 
 
 	virtual const wchar_t* AnsiToWidebyte(const char * strIn) override
 	{
-		static std::wstring ms;
-		if (!GL::Ansi2WideByte(ms, strIn))
-			ms = L"";
-		return ms.c_str();
+		std::wstring s;
+		if (!GL::Ansi2WideByte(s, strIn))
+			m_convertBuffW.assign(L"");
+		else
+			m_convertBuffW.assign(s);
+		return m_convertBuffW.c_str();
 	}
 
 	virtual const char* UTF8ToAnsi(const char * strIn) override
 	{
-		static std::string ms;
-		if (!GL::Utf82Ansi(ms, strIn))
-			ms = "";
-		return ms.c_str();
+		std::string s;
+		if (!GL::Utf82Ansi(s, strIn))
+			m_convertBuffA.assign("");
+		else
+			m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 
 
 	virtual const wchar_t* UTF8ToWidebyte(const char * strIn) override
 	{
-		static std::wstring ms;
-		if (!GL::Utf82WideByte(ms, strIn))
-			ms = L"";
-		return ms.c_str();
+		std::wstring s;
+		if (!GL::Utf82WideByte(s, strIn))
+			m_convertBuffW.assign(L"");
+		else
+			m_convertBuffW.assign(s);
+		return m_convertBuffW.c_str();
 	}
 
 
 	virtual const char* AnsiToUTF8(const char * strIn) override
 	{
-		static std::string ms;
-		if (!GL::Ansi2Utf8(ms, strIn))
-			ms = "";
-		return ms.c_str();
+		std::string s;
+		if (!GL::Ansi2Utf8(s, strIn))
+			m_convertBuffA.assign("");
+		else
+			m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 
 
 	virtual const char* WidebyteToUTF8(const wchar_t * strIn) override
 	{
-		static std::string ms;
-		if (!GL::WideByte2Utf8(ms, strIn))
-			ms = "";
-		return ms.c_str();
+		std::string s;
+		if (!GL::WideByte2Utf8(s, strIn))
+			m_convertBuffA.assign("");
+		else
+			m_convertBuffA.assign(s);
+		return m_convertBuffA.c_str();
 	}
 	
 private:
@@ -533,6 +542,9 @@ private:
 
 	FN_PROGRESS_CALLBACK m_progressCallback;
 	void* m_progressUserData;
+
+	std::string m_convertBuffA;
+	std::wstring m_convertBuffW;
 };
 
 LIBCURLHTTP_API LibcurlHttp* CreateHttp(void)
@@ -547,181 +559,174 @@ LIBCURLHTTP_API void ReleaseHttp(LibcurlHttp* p)
 }
 
 
-LibcurlHttp* _instance()
+LIBCURLHTTP_API void setTimeout(LibcurlHttp* http, int timeout)
 {
-	static LibcurlHttp* s_instance = NULL;
-	if (!s_instance)
-		s_instance = new LibcurlHttpImp;
-	return s_instance;
+	return http->setTimeout(timeout);
 }
 
-LIBCURLHTTP_API void setTimeout(int timeout)
+LIBCURLHTTP_API void setRequestHeader(LibcurlHttp* http, const char* key, const char* value)
 {
-	return _instance()->setTimeout(timeout);
+	return http->setRequestHeader(key, value);
 }
 
-LIBCURLHTTP_API void setRequestHeader(const char* key, const char* value)
+LIBCURLHTTP_API void setUserAgent(LibcurlHttp* http, const char* val)
 {
-	return _instance()->setRequestHeader(key, value);
+	return http->setUserAgent(val);
 }
 
-LIBCURLHTTP_API void setUserAgent(const char* val)
+LIBCURLHTTP_API void setCustomMothod(LibcurlHttp* http, const char* mothod)
 {
-	return _instance()->setUserAgent(val);
+	return http->setCustomMothod(mothod);
 }
 
-LIBCURLHTTP_API void setCustomMothod(const char* mothod)
+LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData)
 {
-	return _instance()->setCustomMothod(mothod);
+	http->setProgress(progress, userData);
 }
 
-LIBCURLHTTP_API void setProgress(FN_PROGRESS_CALLBACK progress, void* userData)
+LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect)
 {
-	_instance()->setProgress(progress, userData);
+	http->setAutoRedirect(autoRedirect);
 }
 
-LIBCURLHTTP_API void setAutoRedirect(bool autoRedirect)
+LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect)
 {
-	_instance()->setAutoRedirect(autoRedirect);
+	http->setMaxRedirect(maxRedirect);
 }
 
-LIBCURLHTTP_API void setMaxRedirect(int maxRedirect)
+LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url)
 {
-	_instance()->setMaxRedirect(maxRedirect);
+	return http->get(url);
 }
 
-LIBCURLHTTP_API int get(const char* url)
-{
-	return _instance()->get(url);
-}
-
-LIBCURLHTTP_API int get_a(const char* url, ...)
+LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);
 
-	int ret = _instance()->get_b(url, argv);
+	int ret = http->get_b(url, argv);
 
 	va_end(argv);
 
 	return ret;
 }
 
-LIBCURLHTTP_API int post(const char* url, const char* content, int contentLen, const char* contentType /*= "application/x-www-form-urlencoded"*/)
+LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType /*= "application/x-www-form-urlencoded"*/)
 {
-	return _instance()->post(url, content, contentLen, contentType);
+	return http->post(url, content, contentLen, contentType);
 }
 
-LIBCURLHTTP_API int post_a(const char* url, ...)
+LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);
 
-	int ret = _instance()->post_b(url, argv);
+	int ret = http->post_b(url, argv);
 
 	va_end(argv);
 
 	return ret;
 }
 
-LIBCURLHTTP_API int download(const char* url, const char* localFileName/*=NULL*/)
+LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName/*=NULL*/)
 {
-	return _instance()->download(url, localFileName);
+	return http->download(url, localFileName);
 }
 
-LIBCURLHTTP_API int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData)
+LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FORM_FIELD* formData, int nSizeFormData)
 {
-	return _instance()->postForm(url, formData, nSizeFormData);
+	return http->postForm(url, formData, nSizeFormData);
 }
 
-LIBCURLHTTP_API int postForm_a(const char* url, ...)
+LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);
 
-	int ret = _instance()->postForm_b(url, argv);
+	int ret = http->postForm_b(url, argv);
 
 	va_end(argv);
 
 	return ret;
 }
 
-LIBCURLHTTP_API const char* getBody(int& len)
+LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len)
 {
-	return _instance()->getBody(len);
+	return http->getBody(len);
 }
 
-LIBCURLHTTP_API int getCode()
+LIBCURLHTTP_API int getCode(LibcurlHttp* http)
 {
-	return _instance()->getCode();
+	return http->getCode();
 }
 
-LIBCURLHTTP_API int getResponseHeaderKeysCount()
+LIBCURLHTTP_API int getResponseHeaderKeysCount(LibcurlHttp* http)
 {
-	return _instance()->getResponseHeaderKeysCount();
+	return http->getResponseHeaderKeysCount();
 }
 
-LIBCURLHTTP_API const char* getResponseHeaderKey(int i)
+LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i)
 {
-	return _instance()->getResponseHeaderKey(i);
+	return http->getResponseHeaderKey(i);
 }
 
-LIBCURLHTTP_API int getResponseHeadersCount(const char* key)
+LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key)
 {
-	return _instance()->getResponseHeadersCount(key);
+	return http->getResponseHeadersCount(key);
 }
 
-LIBCURLHTTP_API const char* getResponseHeader(const char* key, int i)
+LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key, int i)
 {
-	return _instance()->getResponseHeader(key, i);
+	return http->getResponseHeader(key, i);
 }
 
-LIBCURLHTTP_API const char* UrlGB2312Encode(const char * strIn)
+LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->UrlGB2312Encode(strIn);
+	return http->UrlGB2312Encode(strIn);
 }
 
-LIBCURLHTTP_API const char* UrlGB2312Decode(const char * strIn)
+LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->UrlGB2312Decode(strIn);
+	return http->UrlGB2312Decode(strIn);
 }
 
-LIBCURLHTTP_API const char* UrlUTF8Encode(const char * strIn)
+LIBCURLHTTP_API const char* UrlUTF8Encode(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->UrlUTF8Encode(strIn);
+	return http->UrlUTF8Encode(strIn);
 }
 
-LIBCURLHTTP_API const char* UrlUTF8Decode(const char * strIn)
+LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->UrlUTF8Decode(strIn);
+	return http->UrlUTF8Decode(strIn);
 }
 
-LIBCURLHTTP_API const char* WidebyteToAnsi(const wchar_t * strIn)
+LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn)
 {
-	return _instance()->WidebyteToAnsi(strIn);
+	return http->WidebyteToAnsi(strIn);
 }
 
-LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(const char * strIn)
+LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->AnsiToWidebyte(strIn);
+	return http->AnsiToWidebyte(strIn);
 }
 
-LIBCURLHTTP_API const char* UTF8ToAnsi(const char * strIn)
+LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->UTF8ToAnsi(strIn);
+	return http->UTF8ToAnsi(strIn);
 }
 
-LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(const char * strIn)
+LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->UTF8ToWidebyte(strIn);
+	return http->UTF8ToWidebyte(strIn);
 }
 
-LIBCURLHTTP_API const char* AnsiToUTF8(const char * strIn)
+LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn)
 {
-	return _instance()->AnsiToUTF8(strIn);
+	return http->AnsiToUTF8(strIn);
 }
 
-LIBCURLHTTP_API const char* WidebyteToUTF8(const wchar_t * strIn)
+LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn)
 {
-	return _instance()->WidebyteToUTF8(strIn);
+	return http->WidebyteToUTF8(strIn);
 }
+

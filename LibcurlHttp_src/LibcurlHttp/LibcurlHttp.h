@@ -109,81 +109,82 @@ public:
 };
 
 
-//以对象的方式
+//创建http对象
 LIBCURLHTTP_API LibcurlHttp* CreateHttp(void);
+//销毁http对象
 LIBCURLHTTP_API void ReleaseHttp(LibcurlHttp* p);
 
 //以单例的方式，注释见LibcurlHttp
-LIBCURLHTTP_API void setTimeout(int timeout);
-LIBCURLHTTP_API void setRequestHeader(const char* key, const char* value);
-LIBCURLHTTP_API void setUserAgent(const char* val);
-LIBCURLHTTP_API void setCustomMothod(const char* mothod);
-LIBCURLHTTP_API void setProgress(FN_PROGRESS_CALLBACK progress, void* userData);
-LIBCURLHTTP_API void setAutoRedirect(bool autoRedirect);
-LIBCURLHTTP_API void setMaxRedirect(int maxRedirect);
+LIBCURLHTTP_API void setTimeout(LibcurlHttp* http, int timeout);
+LIBCURLHTTP_API void setRequestHeader(LibcurlHttp* http, const char* key, const char* value);
+LIBCURLHTTP_API void setUserAgent(LibcurlHttp* http, const char* val);
+LIBCURLHTTP_API void setCustomMothod(LibcurlHttp* http, const char* mothod);
+LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
+LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect);
+LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect);
 
-LIBCURLHTTP_API int get(const char* url);
-LIBCURLHTTP_API int get_a(const char* url, ...);
-LIBCURLHTTP_API int post(const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
-LIBCURLHTTP_API int post_a(const char* url, ...);
-LIBCURLHTTP_API int download(const char* url, const char* localFileName = NULL);
-LIBCURLHTTP_API int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData);
-LIBCURLHTTP_API int postForm_a(const char* url, ...);
+LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url);
+LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...);
+LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
+LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...);
+LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName = NULL);
+LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FORM_FIELD* formData, int nSizeFormData);
+LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...);
 
-LIBCURLHTTP_API const char* getBody(int& len);
-LIBCURLHTTP_API int getCode();
-LIBCURLHTTP_API int getResponseHeaderKeysCount();
-LIBCURLHTTP_API const char* getResponseHeaderKey(int i);
-LIBCURLHTTP_API int getResponseHeadersCount(const char* key);
-LIBCURLHTTP_API const char* getResponseHeader(const char* key, int i);
+LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len);
+LIBCURLHTTP_API int getCode(LibcurlHttp* http);
+LIBCURLHTTP_API int getResponseHeaderKeysCount(LibcurlHttp* http);
+LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i);
+LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key);
+LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key, int i);
 
-LIBCURLHTTP_API const char* UrlGB2312Encode(const char * strIn);
-LIBCURLHTTP_API const char* UrlGB2312Decode(const char * strIn);
-LIBCURLHTTP_API const char* UrlUTF8Encode(const char * strIn);
-LIBCURLHTTP_API const char* UrlUTF8Decode(const char * strIn);
+LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const char* UrlUTF8Encode(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn);
 
-LIBCURLHTTP_API const char* WidebyteToAnsi(const wchar_t * strIn);
-LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(const char * strIn);
-LIBCURLHTTP_API const char* UTF8ToAnsi(const char * strIn);
-LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(const char * strIn);
-LIBCURLHTTP_API const char* AnsiToUTF8(const char * strIn);
-LIBCURLHTTP_API const char* WidebyteToUTF8(const wchar_t * strIn);
+LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn);
+LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn);
 
 
 
 #ifndef LIBCURLHTTP_EXPORTS
 typedef LibcurlHttp* (*FN_CreateHttp)(void);
 typedef void(*FN_ReleaseHttp)(LibcurlHttp* p);
-typedef void(*FN_setTimeout)(int timeout);
-typedef void(*FN_setRequestHeader)(const char* key, const char* value);
-typedef void(*FN_setUserAgent)(const char* val);
-typedef void(*FN_setCustomMothod)(const char* mothod);
-typedef void(*FN_setProgress)(FN_PROGRESS_CALLBACK progress, void* userData);
-typedef void(*FN_setAutoRedirect)(bool autoRedirect);
-typedef void(*FN_setMaxRedirect)(int maxRedirect);
-typedef int(*FN_get)(const char* url);
-typedef int(*FN_get_a)(const char* url, ...);
-typedef int(*FN_post)(const char* url, const char* content, int contentLen, const char* contentType);
-typedef int(*FN_post_a)(const char* url, ...);
-typedef int(*FN_download)(const char* url, const char* localFileName);
-typedef int(*FN_postForm)(const char* url, FORM_FIELD* formData, int nSizeFormData);
-typedef int(*FN_postForm_a)(const char* url, ...);
-typedef const char* (*FN_getBody)(int& len);
-typedef int (*FN_getCode)();
-typedef int (*FN_getResponseHeaderKeysCount)();
-typedef const char* (*FN_getResponseHeaderKey)(int i);
-typedef int (*FN_getResponseHeadersCount)(const char* key);
-typedef const char* (*FN_getResponseHeader)(const char* key, int i);
-typedef const char* (*FN_UrlGB2312Encode)(const char * strIn);
-typedef const char* (*FN_UrlGB2312Decode)(const char * strIn);
-typedef const char* (*FN_UrlUTF8Encode)(const char * strIn);
-typedef const char* (*FN_UrlUTF8Decode)(const char * strIn);
-typedef const char* (*FN_WidebyteToAnsi)(const wchar_t * strIn);
-typedef const wchar_t* (*FN_AnsiToWidebyte)(const char * strIn);
-typedef const char* (*FN_UTF8ToAnsi)(const char * strIn);
-typedef const wchar_t* (*FN_UTF8ToWidebyte)(const char * strIn);
-typedef const char* (*FN_AnsiToUTF8)(const char * strIn);
-typedef const char* (*FN_WidebyteToUTF8)(const wchar_t * strIn);
+typedef void(*FN_setTimeout)(LibcurlHttp* http, int timeout);
+typedef void(*FN_setRequestHeader)(LibcurlHttp* http, const char* key, const char* value);
+typedef void(*FN_setUserAgent)(LibcurlHttp* http, const char* val);
+typedef void(*FN_setCustomMothod)(LibcurlHttp* http, const char* mothod);
+typedef void(*FN_setProgress)(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
+typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
+typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
+typedef int(*FN_get)(LibcurlHttp* http, const char* url);
+typedef int(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
+typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
+typedef int(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
+typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName);
+typedef int(*FN_postForm)(LibcurlHttp* http, const char* url, FORM_FIELD* formData, int nSizeFormData);
+typedef int(*FN_postForm_a)(LibcurlHttp* http, const char* url, ...);
+typedef const char* (*FN_getBody)(LibcurlHttp* http, int& len);
+typedef int (*FN_getCode)(LibcurlHttp* http);
+typedef int (*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
+typedef const char* (*FN_getResponseHeaderKey)(LibcurlHttp* http, int i);
+typedef int (*FN_getResponseHeadersCount)(LibcurlHttp* http, const char* key);
+typedef const char* (*FN_getResponseHeader)(LibcurlHttp* http, const char* key, int i);
+typedef const char* (*FN_UrlGB2312Encode)(LibcurlHttp* http, const char * strIn);
+typedef const char* (*FN_UrlGB2312Decode)(LibcurlHttp* http, const char * strIn);
+typedef const char* (*FN_UrlUTF8Encode)(LibcurlHttp* http, const char * strIn);
+typedef const char* (*FN_UrlUTF8Decode)(LibcurlHttp* http, const char * strIn);
+typedef const char* (*FN_WidebyteToAnsi)(LibcurlHttp* http, const wchar_t * strIn);
+typedef const wchar_t* (*FN_AnsiToWidebyte)(LibcurlHttp* http, const char * strIn);
+typedef const char* (*FN_UTF8ToAnsi)(LibcurlHttp* http, const char * strIn);
+typedef const wchar_t* (*FN_UTF8ToWidebyte)(LibcurlHttp* http, const char * strIn);
+typedef const char* (*FN_AnsiToUTF8)(LibcurlHttp* http, const char * strIn);
+typedef const char* (*FN_WidebyteToUTF8)(LibcurlHttp* http, const wchar_t * strIn);
 
 
 #define DEF_PROC(hDll, name) \

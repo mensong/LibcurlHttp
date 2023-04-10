@@ -114,7 +114,10 @@ int main()
 	//int code = HTTP_CLIENT::Ins().download("https://down12.wsyhn.com/app/yinghuaxuexiaomoniqi.apk", NULL);
 
 	MessageBoxA(NULL, "start", "", 0);
-	HTTP_CLIENT::Ins().download("http://10.18.4.29:35014/downloadFile.rar", "E:");
+	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
+	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:");
+	std::string s = HTTP_CLIENT::Ins().AnsiToUTF8(http, "123");
+	HTTP_CLIENT::Ins().ReleaseHttp(http);
 	MessageBoxA(NULL, "end", "", 0);
     return 0;
 }
