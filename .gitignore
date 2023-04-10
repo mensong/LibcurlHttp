@@ -16,3 +16,5 @@
 /LibcurlHttp_src/x64
 /LibcurlHttp_src/.vs
 /LibcurlHttp_src/*.opendb
+/LibcurlHttp_src/*.opensdf
+/LibcurlHttp_src/*.sdf

@@ -1292,7 +1292,7 @@ namespace path
                 }
                 else if(pystring::endswith(path, ":"))
                 {
-                    path += b;
+                    path += "\\" + b;
                 }
                 else if(!b.empty())
                 {

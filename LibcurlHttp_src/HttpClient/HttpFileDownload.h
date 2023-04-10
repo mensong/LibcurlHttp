@@ -21,6 +21,9 @@ protected:
 protected:
 	virtual void closeFile();
 
+protected:
+	std::string getTimesampFileName();
+
 private:
 	std::string m_file;
 	FILE* m_fd;

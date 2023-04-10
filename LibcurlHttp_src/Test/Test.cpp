@@ -111,10 +111,11 @@ int main()
 	//std::wcout << ws.c_str() << std::endl;
 
 	//HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
-	//int code = HTTP_CLIENT::Ins().download("http://download.rz520.com/small/photoshopcs6.zip", NULL);
+	//int code = HTTP_CLIENT::Ins().download("https://down12.wsyhn.com/app/yinghuaxuexiaomoniqi.apk", NULL);
 
-	HTTP_CLIENT::Ins().get("https://www.baidu.com");
-
+	MessageBoxA(NULL, "start", "", 0);
+	HTTP_CLIENT::Ins().download("http://10.18.4.29:35014/downloadFile.rar", "E:");
+	MessageBoxA(NULL, "end", "", 0);
     return 0;
 }
 
