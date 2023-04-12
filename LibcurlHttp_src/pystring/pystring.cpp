@@ -1292,7 +1292,10 @@ namespace path
                 }
                 else if(pystring::endswith(path, ":"))
                 {
-                    path += "\\" + b;
+					if (pystring::startswith(b, "/") || pystring::startswith(b, "\\"))
+						path += b;
+					else
+						path += "\\" + b;
                 }
                 else if(!b.empty())
                 {
@@ -1418,7 +1421,7 @@ namespace path
         while(!head2.empty() && ((pystring::slice(head2,-1) == "/") ||
                                  (pystring::slice(head2,-1) == "\\")))
         {
-            head2 = pystring::slice(head,0,-1);
+            head2 = pystring::slice(head2,0,-1);
         }
         
         if(!head2.empty()) head = head2;
