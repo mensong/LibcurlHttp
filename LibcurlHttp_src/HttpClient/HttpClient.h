@@ -6,20 +6,7 @@
 #include <algorithm>
 #include <functional>
 #include <curl/curl.h>
-
-enum FormFieldType
-{
-	ftNormal,
-	ftFile
-};
-
-typedef struct FormField
-{
-	FormFieldType fieldType;
-	std::string fieldName;
-	std::string fieldValue;
-	std::string fileName;//只有在文件类型才有效
-} FormField;
+#include "../LibcurlHttp/LibcurlHttp.h"
 
 typedef std::map< std::string, std::vector<std::string> > ResponseHeaderFields;
 
@@ -56,12 +43,17 @@ public:
 	//post form
 	virtual void ResetFormFields() { m_formFields.clear(); m_isInnerPost = false; }
 	virtual void AddFormField(const FormField& field) { m_formFields.push_back(field); m_isInnerPost = true; }
-	virtual const std::vector<FormField>& GetFormField() { return m_formFields; }
+	virtual const std::vector<FormField>& GetFormFields() { return m_formFields; }
 
 	//normal post
 	virtual void ResetNormalPost() { m_postData.clear(); m_isInnerPost = false; }
 	virtual void SetNormalPostData(const std::string& data) { m_postData = data; m_isInnerPost = true; }
 	virtual const std::string& GetNormalPostData() { return m_postData; }
+
+	//multipart post
+	virtual void ResetMultipartFields() { m_multipartFields.clear(); m_isInnerPost = false; }
+	virtual void AddMultipartField(const MultipartField& field) { m_multipartFields.push_back(field); m_isInnerPost = true; }
+	virtual const std::vector<MultipartField>& GetMultipartFields() { return m_multipartFields; }
 
 	virtual bool Do();
 
@@ -118,6 +110,7 @@ protected:
 	*/
 	std::vector<FormField> m_formFields;
 	std::string m_postData;
+	std::vector<MultipartField> m_multipartFields;
 
 	CURLcode m_retCode;
 	int m_httpCode;

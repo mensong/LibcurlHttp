@@ -113,12 +113,11 @@ int main()
 	//HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
 	//int code = HTTP_CLIENT::Ins().download("https://down12.wsyhn.com/app/yinghuaxuexiaomoniqi.apk", NULL);
 
-	MessageBoxA(NULL, "start", "", 0);
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
+	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
 	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:");
-	std::string s = HTTP_CLIENT::Ins().AnsiToUTF8(http, "123");
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
-	MessageBoxA(NULL, "end", "", 0);
+
     return 0;
 }
 

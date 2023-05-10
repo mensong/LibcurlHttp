@@ -193,23 +193,22 @@ public:
 		return post(url, sContet.c_str(), (int)sContet.size());
 	}
 
-	virtual int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData)
+	virtual int postForm(const char* url, FormField* formDataArr, int nCountFormData)
 	{
 		HttpClientFC httpClient;
 
-		for (int i = 0; i < nSizeFormData; ++i)
+		for (int i = 0; i < nCountFormData; ++i)
 		{
 			FormField ff;
-			if (!formData[i].fieldName)
+			if (formDataArr[i].fieldName.size() == 0)
 				continue;
-			ff.fieldName = formData[i].fieldName;
-			ff.fieldValue = formData[i].fieldValue ? formData[i].fieldValue : "";
-			if (formData[i].fieldType == (int)ftNormal)
-				ff.fieldType = ftNormal;
-			else if (formData[i].fieldType == (int)ftFile)
+			ff.fieldName = formDataArr[i].fieldName.c_str();
+			ff.fieldValue = formDataArr[i].fieldValue.c_str();
+			ff.fieldType = formDataArr[i].fieldType;
+			if (formDataArr[i].fieldType == ftFile)
 			{
 				ff.fieldType = ftFile;
-				ff.fileName = formData[i].fileName ? formData[i].fileName : "";
+				ff.fileName = formDataArr[i].fileName.c_str();
 			}
 
 			httpClient.AddFormField(ff);
@@ -224,7 +223,7 @@ public:
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
-		if (nSizeFormData == 0)
+		if (nCountFormData == 0)
 		{//防止post空内容时出现411错误
 			httpClient.SetHeader("Content-Length", "0");
 		}
@@ -302,7 +301,7 @@ public:
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
-		if (httpClient.GetFormField().size() == 0)
+		if (httpClient.GetFormFields().size() == 0)
 		{//防止post空内容时出现411错误
 			httpClient.SetHeader("Content-Length", "0");
 		}
@@ -316,7 +315,46 @@ public:
 		m_customMothod = "";
 		return m_responseCode;
 	}
-		
+	
+	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) override
+	{
+		HttpClientFC httpClient;
+
+		for (int i = 0; i < nCountMultipartData; ++i)
+		{
+			MultipartField mf;
+			mf.contenxtData = multipartDataArr[i].contenxtData;
+			mf.filePath = multipartDataArr[i].filePath;
+			mf.fileName = multipartDataArr[i].fileName;
+			mf.multipartName = multipartDataArr[i].multipartName;
+			mf.mimeType = multipartDataArr[i].mimeType;
+			httpClient.AddMultipartField(mf);
+		}
+
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
+		httpClient.SetUrl(sUrl.c_str());
+		httpClient.SetTimtout(m_timeout);
+		httpClient.SetUserAgent(m_userAgent);
+		httpClient.SetHeaders(m_requestHeaders);
+		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetProgress(m_progressCallback, m_progressUserData);
+		httpClient.SetAutoRedirect(m_autoRedirect);
+		httpClient.SetMaxRedirect(m_maxRedirect);
+		if (nCountMultipartData == 0)
+		{//防止post空内容时出现411错误
+			httpClient.SetHeader("Content-Length", "0");
+		}
+
+		httpClient.Do();
+
+		m_responseCode = httpClient.GetHttpCode();
+		m_responseBody = httpClient.GetBody();
+		m_responseHeaders = httpClient.GetResponseHeaders();
+
+		m_customMothod = "";
+		return m_responseCode;
+	}
+
 	virtual void setRequestHeader(const char* key, const char* value) override
 	{
 		if (!key || key[0] == '\0')
@@ -340,7 +378,7 @@ public:
 		m_customMothod = mothod;
 	}
 
-	virtual int download(const char* url, const char* localFileName=NULL) override
+	virtual int download(const char* url, const char* localFileName = NULL) override
 	{
 		HttpFileDownloadFC downloader;
 
@@ -524,7 +562,7 @@ public:
 			m_convertBuffA.assign(s);
 		return m_convertBuffA.c_str();
 	}
-	
+
 private:
 	int m_timeout;
 	std::string m_userAgent;
@@ -633,9 +671,9 @@ LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* loc
 	return http->download(url, localFileName);
 }
 
-LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FORM_FIELD* formData, int nSizeFormData)
+LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCountFormData)
 {
-	return http->postForm(url, formData, nSizeFormData);
+	return http->postForm(url, formDataArr, nCountFormData);
 }
 
 LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...)
@@ -648,6 +686,11 @@ LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...)
 	va_end(argv);
 
 	return ret;
+}
+
+LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData)
+{
+	return http->postMultipart(url, multipartDataArr, nCountMultipartData);
 }
 
 LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len)

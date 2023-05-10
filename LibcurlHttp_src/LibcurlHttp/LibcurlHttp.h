@@ -1,10 +1,36 @@
 #pragma once
+#include <string>
 
 #ifdef LIBCURLHTTP_EXPORTS
 #define LIBCURLHTTP_API extern "C" __declspec(dllexport)
 #else
 #define LIBCURLHTTP_API extern "C" __declspec(dllimport)
 #endif
+
+typedef enum FieldType
+{
+	ftNormal,
+	ftFile
+} FieldType;
+
+typedef struct FormField
+{
+	FieldType fieldType;
+	std::string fieldName;
+	std::string fieldValue;
+	std::string fileName;//只有在文件类型才有效
+} FormField;
+
+typedef struct MultipartField
+{
+	std::string contenxtData;	//提交的是直接指定的内容，该字段有内容时，filePath字段无效
+	std::string filePath;		//提交的是文件，contenxtData有内容时，该字段无效
+	
+	std::string fileName;			//指定文件名	
+	std::string multipartName;		//名称
+	std::string mimeType;			//Mime type
+
+} MultipartField;
 
 //进度回调原型 int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData);
 typedef int(*FN_PROGRESS_CALLBACK)(
@@ -13,20 +39,6 @@ typedef int(*FN_PROGRESS_CALLBACK)(
 	double ultotal,
 	double ulnow,
 	void* userData);
-
-typedef struct FORM_FIELD
-{
-	int fieldType;//0=普通字段；1=文件字段
-	char fieldName[256];
-	char fieldValue[MAX_PATH];//字段值或文件路径
-	char fileName[MAX_PATH];//只有在文件类型才有效
-} FORM_FIELD;
-
-#define FillFormField(target, _fieldType, _fieldName, _fieldValue, _fileName) \
-	target.fieldType = _fieldType; \
-	if (_fieldName) strcpy(target.fieldName, _fieldName); \
-	if (_fieldValue) strcpy(target.fieldValue, _fieldValue); \
-	if (_fileName) strcpy(target.fileName, _fileName); 
 
 class LibcurlHttp
 {
@@ -69,15 +81,18 @@ public:
 	virtual int post_b(const char* url, va_list argv) = 0;
 
 	//提交表单
-	virtual int postForm(const char* url, FORM_FIELD* formData, int nSizeFormData) = 0;
+	virtual int postForm(const char* url, FormField* formDataArr, int nCountFormData) = 0;
 	// url, fieldtype1(1:普通字段；2:file字段), fieldname1, fieldvalue1, [如果fieldtype1==2则存在]fileName1,    
 	//      fieldtype2(1:普通字段；2:file字段), fieldname2, fieldvalue2, [如果fieldtype2==2则存在]fileName2, 
 	//      ……, NULL
 	virtual int postForm_a(const char* url, ...) = 0;
 	virtual int postForm_b(const char* url, va_list argv) = 0;
+
+	//提交multipart
+	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) = 0;
 		
 	//下载网络文件到本地
-	virtual int download(const char* url, const char* localFileName=NULL) = 0;
+	virtual int download(const char* url, const char* localFileName = NULL) = 0;
 	
 	//获得提交后的body内容
 	virtual const char* getBody(int& len) = 0;
@@ -128,8 +143,9 @@ LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...);
 LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
 LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...);
 LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName = NULL);
-LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FORM_FIELD* formData, int nSizeFormData);
+LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCountFormData);
 LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...);
+LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
 
 LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len);
 LIBCURLHTTP_API int getCode(LibcurlHttp* http);
@@ -152,155 +168,89 @@ LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * st
 
 
 
-#ifndef LIBCURLHTTP_EXPORTS
-typedef LibcurlHttp* (*FN_CreateHttp)(void);
-typedef void(*FN_ReleaseHttp)(LibcurlHttp* p);
-typedef void(*FN_setTimeout)(LibcurlHttp* http, int timeout);
-typedef void(*FN_setRequestHeader)(LibcurlHttp* http, const char* key, const char* value);
-typedef void(*FN_setUserAgent)(LibcurlHttp* http, const char* val);
-typedef void(*FN_setCustomMothod)(LibcurlHttp* http, const char* mothod);
-typedef void(*FN_setProgress)(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
-typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
-typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
-typedef int(*FN_get)(LibcurlHttp* http, const char* url);
-typedef int(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
-typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
-typedef int(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
-typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName);
-typedef int(*FN_postForm)(LibcurlHttp* http, const char* url, FORM_FIELD* formData, int nSizeFormData);
-typedef int(*FN_postForm_a)(LibcurlHttp* http, const char* url, ...);
-typedef const char* (*FN_getBody)(LibcurlHttp* http, int& len);
-typedef int (*FN_getCode)(LibcurlHttp* http);
-typedef int (*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
-typedef const char* (*FN_getResponseHeaderKey)(LibcurlHttp* http, int i);
-typedef int (*FN_getResponseHeadersCount)(LibcurlHttp* http, const char* key);
-typedef const char* (*FN_getResponseHeader)(LibcurlHttp* http, const char* key, int i);
-typedef const char* (*FN_UrlGB2312Encode)(LibcurlHttp* http, const char * strIn);
-typedef const char* (*FN_UrlGB2312Decode)(LibcurlHttp* http, const char * strIn);
-typedef const char* (*FN_UrlUTF8Encode)(LibcurlHttp* http, const char * strIn);
-typedef const char* (*FN_UrlUTF8Decode)(LibcurlHttp* http, const char * strIn);
-typedef const char* (*FN_WidebyteToAnsi)(LibcurlHttp* http, const wchar_t * strIn);
-typedef const wchar_t* (*FN_AnsiToWidebyte)(LibcurlHttp* http, const char * strIn);
-typedef const char* (*FN_UTF8ToAnsi)(LibcurlHttp* http, const char * strIn);
-typedef const wchar_t* (*FN_UTF8ToWidebyte)(LibcurlHttp* http, const char * strIn);
-typedef const char* (*FN_AnsiToUTF8)(LibcurlHttp* http, const char * strIn);
-typedef const char* (*FN_WidebyteToUTF8)(LibcurlHttp* http, const wchar_t * strIn);
 
-
-#define DEF_PROC(hDll, name) \
-	FN_##name name = (FN_##name)::GetProcAddress(hDll, #name)
-
-#define INIT_LIBCURLHTTP(hDll) \
-	HMODULE __hDll__ = (hDll); \
-	DEF_PROC(__hDll__, CreateHttp); \
-	DEF_PROC(__hDll__, ReleaseHttp); \
-	DEF_PROC(__hDll__, setTimeout); \
-	DEF_PROC(__hDll__, setRequestHeader); \
-	DEF_PROC(__hDll__, setUserAgent); \
-	DEF_PROC(__hDll__, setCustomMothod); \
-	DEF_PROC(__hDll__, setProgress); \
-	DEF_PROC(__hDll__, setAutoRedirect); \
-	DEF_PROC(__hDll__, setMaxRedirect); \
-	DEF_PROC(__hDll__, get); \
-	DEF_PROC(__hDll__, get_a); \
-	DEF_PROC(__hDll__, post); \
-	DEF_PROC(__hDll__, post_a); \
-	DEF_PROC(__hDll__, download); \
-	DEF_PROC(__hDll__, postForm); \
-	DEF_PROC(__hDll__, postForm_a); \
-	DEF_PROC(__hDll__, getBody); \
-	DEF_PROC(__hDll__, getCode); \
-	DEF_PROC(__hDll__, getResponseHeaderKeysCount); \
-	DEF_PROC(__hDll__, getResponseHeaderKey); \
-	DEF_PROC(__hDll__, getResponseHeadersCount); \
-	DEF_PROC(__hDll__, getResponseHeader); \
-	DEF_PROC(__hDll__, UrlGB2312Encode); \
-	DEF_PROC(__hDll__, UrlGB2312Decode); \
-	DEF_PROC(__hDll__, UrlUTF8Encode); \
-	DEF_PROC(__hDll__, UrlUTF8Decode); \
-	DEF_PROC(__hDll__, WidebyteToAnsi); \
-	DEF_PROC(__hDll__, AnsiToWidebyte); \
-	DEF_PROC(__hDll__, UTF8ToAnsi); \
-	DEF_PROC(__hDll__, UTF8ToWidebyte); \
-	DEF_PROC(__hDll__, AnsiToUTF8); \
-	DEF_PROC(__hDll__, WidebyteToUTF8);
 
 class HTTP_CLIENT
 {
 public:
-private:
-	static HTTP_CLIENT* s_ins;
+	typedef LibcurlHttp* (*FN_CreateHttp)(void);
+	typedef void(*FN_ReleaseHttp)(LibcurlHttp* p);
+	typedef void(*FN_setTimeout)(LibcurlHttp* http, int timeout);
+	typedef void(*FN_setRequestHeader)(LibcurlHttp* http, const char* key, const char* value);
+	typedef void(*FN_setUserAgent)(LibcurlHttp* http, const char* val);
+	typedef void(*FN_setCustomMothod)(LibcurlHttp* http, const char* mothod);
+	typedef void(*FN_setProgress)(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
+	typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
+	typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
+	typedef int(*FN_get)(LibcurlHttp* http, const char* url);
+	typedef int(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
+	typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
+	typedef int(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
+	typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName);
+	typedef int(*FN_postForm)(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCoutFormData);
+	typedef int(*FN_postForm_a)(LibcurlHttp* http, const char* url, ...);
+	typedef int(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
+	typedef const char* (*FN_getBody)(LibcurlHttp* http, int& len);
+	typedef int(*FN_getCode)(LibcurlHttp* http);
+	typedef int(*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
+	typedef const char* (*FN_getResponseHeaderKey)(LibcurlHttp* http, int i);
+	typedef int(*FN_getResponseHeadersCount)(LibcurlHttp* http, const char* key);
+	typedef const char* (*FN_getResponseHeader)(LibcurlHttp* http, const char* key, int i);
+	typedef const char* (*FN_UrlGB2312Encode)(LibcurlHttp* http, const char * strIn);
+	typedef const char* (*FN_UrlGB2312Decode)(LibcurlHttp* http, const char * strIn);
+	typedef const char* (*FN_UrlUTF8Encode)(LibcurlHttp* http, const char * strIn);
+	typedef const char* (*FN_UrlUTF8Decode)(LibcurlHttp* http, const char * strIn);
+	typedef const char* (*FN_WidebyteToAnsi)(LibcurlHttp* http, const wchar_t * strIn);
+	typedef const wchar_t* (*FN_AnsiToWidebyte)(LibcurlHttp* http, const char * strIn);
+	typedef const char* (*FN_UTF8ToAnsi)(LibcurlHttp* http, const char * strIn);
+	typedef const wchar_t* (*FN_UTF8ToWidebyte)(LibcurlHttp* http, const char * strIn);
+	typedef const char* (*FN_AnsiToUTF8)(LibcurlHttp* http, const char * strIn);
+	typedef const char* (*FN_WidebyteToUTF8)(LibcurlHttp* http, const wchar_t * strIn);
 
-public:
-	static HTTP_CLIENT& Ins()
-	{
-		if (!s_ins)
-			s_ins = new HTTP_CLIENT;
-		return *s_ins;
-	}
-
-	static void Release()
-	{
-		if (s_ins)
-		{
-			delete s_ins;
-			s_ins = NULL;
-		}
-	}
+#define DEF_PROC(hDll, name) \
+	name = (FN_##name)::GetProcAddress(hDll, #name)
 
 	HTTP_CLIENT()
 	{
-		hDll = LoadLibraryA("LibcurlHttp.dll");
-		if (hDll)
-		{
-			INIT_LIBCURLHTTP(hDll);
-			this->CreateHttp			=   CreateHttp;
-			this->ReleaseHttp			=   ReleaseHttp;
-			this->setTimeout			=   setTimeout;
-			this->setRequestHeader		=   setRequestHeader;
-			this->setUserAgent			=   setUserAgent;
-			this->setCustomMothod       =   setCustomMothod;
-			this->setProgress			=	setProgress;
-			this->setAutoRedirect		=	setAutoRedirect;
-			this->setMaxRedirect		=	setMaxRedirect;
-			this->get					=   get;
-			this->get_a					=   get_a;
-			this->post					=   post;
-			this->post_a				=   post_a;
-			this->download				=   download; 
-			this->postForm				=   postForm; 
-			this->postForm_a			=   postForm_a; 
-			this->getBody				=   getBody; 
-			this->getCode				=   getCode;
-			this->getResponseHeaderKeysCount = getResponseHeaderKeysCount;
-			this->getResponseHeaderKey	=	getResponseHeaderKey;
-			this->getResponseHeadersCount = getResponseHeadersCount;
-			this->getResponseHeader		=	getResponseHeader;
-			this->UrlGB2312Encode		=   UrlGB2312Encode;
-			this->UrlGB2312Decode		=   UrlGB2312Decode;
-			this->UrlUTF8Encode			=   UrlUTF8Encode;
-			this->UrlUTF8Decode			=   UrlUTF8Decode;
-			this->WidebyteToAnsi		=	WidebyteToAnsi;
-			this->AnsiToWidebyte		=	AnsiToWidebyte;
-			this->UTF8ToAnsi			=	UTF8ToAnsi;
-			this->UTF8ToWidebyte		=	UTF8ToWidebyte;
-			this->AnsiToUTF8			=	AnsiToUTF8;
-			this->WidebyteToUTF8		=	WidebyteToUTF8;
-		}
-		else
-		{
-			::MessageBoxA(NULL, "找不到LibcurlHttp.dll模块", "找不到模块", MB_OK | MB_ICONERROR);
-		}
-	}
-	~HTTP_CLIENT()
-	{
-		if (hDll)
-		{
-			FreeLibrary(hDll);
-			hDll = NULL;
-		}
-	}
+		hDll = LoadLibraryFromCurrentDir("LibcurlHttp.dll");
+		if (!hDll)
+			return;
 
+		DEF_PROC(hDll, CreateHttp);
+		DEF_PROC(hDll, ReleaseHttp);
+		DEF_PROC(hDll, setTimeout);
+		DEF_PROC(hDll, setRequestHeader);
+		DEF_PROC(hDll, setUserAgent);
+		DEF_PROC(hDll, setCustomMothod);
+		DEF_PROC(hDll, setProgress);
+		DEF_PROC(hDll, setAutoRedirect);
+		DEF_PROC(hDll, setMaxRedirect);
+		DEF_PROC(hDll, get);
+		DEF_PROC(hDll, get_a);
+		DEF_PROC(hDll, post);
+		DEF_PROC(hDll, post_a);
+		DEF_PROC(hDll, download);
+		DEF_PROC(hDll, postForm);
+		DEF_PROC(hDll, postForm_a);
+		DEF_PROC(hDll, postMultipart);
+		DEF_PROC(hDll, getBody);
+		DEF_PROC(hDll, getCode);
+		DEF_PROC(hDll, getResponseHeaderKeysCount);
+		DEF_PROC(hDll, getResponseHeaderKey);
+		DEF_PROC(hDll, getResponseHeadersCount);
+		DEF_PROC(hDll, getResponseHeader);
+		DEF_PROC(hDll, UrlGB2312Encode);
+		DEF_PROC(hDll, UrlGB2312Decode);
+		DEF_PROC(hDll, UrlUTF8Encode);
+		DEF_PROC(hDll, UrlUTF8Decode);
+		DEF_PROC(hDll, WidebyteToAnsi);
+		DEF_PROC(hDll, AnsiToWidebyte);
+		DEF_PROC(hDll, UTF8ToAnsi);
+		DEF_PROC(hDll, UTF8ToWidebyte);
+		DEF_PROC(hDll, AnsiToUTF8);
+		DEF_PROC(hDll, WidebyteToUTF8);
+	}
+	
 	FN_CreateHttp			CreateHttp;
 	FN_ReleaseHttp			ReleaseHttp;
 	FN_setTimeout			setTimeout;
@@ -317,6 +267,7 @@ public:
 	FN_download				download;
 	FN_postForm				postForm;
 	FN_postForm_a			postForm_a;
+	FN_postMultipart		postMultipart;
 	FN_getBody				getBody;
 	FN_getCode				getCode;
 	FN_getResponseHeaderKeysCount getResponseHeaderKeysCount;
@@ -333,9 +284,62 @@ public:
 	FN_UTF8ToWidebyte		UTF8ToWidebyte;
 	FN_AnsiToUTF8			AnsiToUTF8;
 	FN_WidebyteToUTF8		WidebyteToUTF8;
+	
+public:
+	~HTTP_CLIENT()
+	{
+		if (hDll)
+		{
+			FreeLibrary(hDll);
+			hDll = NULL;
+		}
+	}
+
+	static HTTP_CLIENT& Ins()
+	{
+		if (!s_ins)
+			s_ins = new HTTP_CLIENT;
+		return *s_ins;
+	}
+
+	static void Rel()
+	{
+		if (s_ins)
+		{
+			delete s_ins;
+			s_ins = NULL;
+		}
+	}
+
+	static HMODULE LoadLibraryFromCurrentDir(const char* dllName)
+	{
+		char selfPath[MAX_PATH];
+		MEMORY_BASIC_INFORMATION mbi;
+		HMODULE hModule = ((::VirtualQuery(LoadLibraryFromCurrentDir, &mbi, sizeof(mbi)) != 0) ? (HMODULE)mbi.AllocationBase : NULL);
+		::GetModuleFileNameA(hModule, selfPath, MAX_PATH);
+		std::string moduleDir(selfPath);
+		size_t idx = moduleDir.find_last_of('\\');
+		moduleDir = moduleDir.substr(0, idx);
+		std::string modulePath = moduleDir + "\\" + dllName;
+		char curDir[MAX_PATH];
+		::GetCurrentDirectoryA(MAX_PATH, curDir);
+		::SetCurrentDirectoryA(moduleDir.c_str());
+		HMODULE hDll = LoadLibraryA(modulePath.c_str());
+		::SetCurrentDirectoryA(curDir);
+		if (!hDll)
+		{
+			DWORD err = ::GetLastError();
+			char buf[10];
+			sprintf_s(buf, "%u", err);
+			::MessageBoxA(NULL, ("找不到" + modulePath + "模块:" + buf).c_str(), "找不到模块", MB_OK | MB_ICONERROR);
+		}
+		return hDll;
+	}
 
 	HMODULE hDll;
+	static HTTP_CLIENT* s_ins;
 };
-__declspec(selectany) HTTP_CLIENT* HTTP_CLIENT::s_ins = NULL;
 
+#ifndef LIBCURLHTTP_EXPORTS
+__declspec(selectany) HTTP_CLIENT* HTTP_CLIENT::s_ins = NULL;
 #endif

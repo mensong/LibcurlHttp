@@ -79,7 +79,8 @@ bool HttpClient::Do()
 	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, m_maxRedirect);
 
 	/** set user agent */
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, _THIS->GetUserAgent().c_str());
+	if (_THIS->GetUserAgent().size() > 0)
+		curl_easy_setopt(curl, CURLOPT_USERAGENT, _THIS->GetUserAgent().c_str());
 
 	/** set headers */
 	curl_slist* headerList = NULL;
@@ -106,10 +107,11 @@ bool HttpClient::Do()
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, _THIS->GetTimeout());
 		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 	}
-
-	//自定义方法
+	
+	/** set body */
 	std::string sMethod;
 	struct curl_httppost* post = NULL;
+	curl_mime *mime = NULL;
 	if (_THIS->m_formFields.size() > 0)
 	{
 		sMethod = _THIS->GetCustomMothod("POST");
@@ -160,6 +162,44 @@ bool HttpClient::Do()
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, _THIS->m_postData.c_str());
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, _THIS->m_postData.size());
 	}
+	else if (_THIS->m_multipartFields.size() > 0)
+	{
+		sMethod = _THIS->GetCustomMothod("POST");
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+		
+		mime = curl_mime_init(curl);
+		if (mime)
+		{
+			for (int i = 0; i < _THIS->m_multipartFields.size(); ++i)
+			{
+				const MultipartField& mpf = _THIS->m_multipartFields[i];
+				curl_mimepart *part = curl_mime_addpart(mime);
+
+				//set data
+				if (mpf.contenxtData.size() > 0)
+				{
+					curl_mime_data(part, &mpf.contenxtData[0], mpf.contenxtData.size());
+				}
+				else if (mpf.filePath.size() > 0)
+				{
+					curl_mime_filedata(part, mpf.filePath.c_str());
+				}
+
+				//set name 
+				if (mpf.multipartName.size() > 0)
+					curl_mime_name(part, mpf.multipartName.c_str());
+
+				//set filename
+				if (mpf.fileName.size() > 0)
+					curl_mime_filename(part, mpf.fileName.c_str());
+
+				//set mime type
+				if (mpf.mimeType.size() > 0)
+					curl_mime_type(part, mpf.mimeType.c_str());
+			}
+		}
+		
+	}
 	else
 	{
 		if (m_isInnerPost)
@@ -167,10 +207,11 @@ bool HttpClient::Do()
 		else
 			sMethod = _THIS->GetCustomMothod("GET");
 	}
-	//设置自定义方法
+
+	/** set custom method */
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 
-	//开始执行请求
+	/** 开始执行请求 */
 	_THIS->m_retCode = curl_easy_perform(curl);
 	//查看是否有出错信息
 	//const char* pError = curl_easy_strerror(m_retCode);
@@ -194,6 +235,9 @@ bool HttpClient::Do()
 
 	if (post)
 		curl_formfree(post);
+	
+	if (mime)
+		curl_mime_free(mime);
 
 	//清理列表
 	if (headerList)

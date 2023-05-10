@@ -141,15 +141,14 @@ bool HttpFileDownload::Do()
 
 					std::string targetFileName = pystring::os::path::dirname(saveFileName);
 					if (!targetFileName.empty())
-						targetFileName += fileName;
+						targetFileName = pystring::os::path::join(targetFileName, fileName);
 					else
 						targetFileName = fileName;
 					//Ö´ÐÐÖØÃüÃû
 					::MoveFileA(saveFileName.c_str(), targetFileName.c_str());
 				}
 			}
-		}
-		
+		}		
 	}
 
 	return ret;
