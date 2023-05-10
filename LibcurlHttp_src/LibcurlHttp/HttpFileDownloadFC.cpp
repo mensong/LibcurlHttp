@@ -3,7 +3,8 @@
 
 
 HttpFileDownloadFC::HttpFileDownloadFC()
-	: m_progressCallback(NULL)
+	: HttpFileDownload()
+	, m_progressCallback(NULL)
 	, m_userData(NULL)
 {
 }

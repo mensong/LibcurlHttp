@@ -5,6 +5,7 @@
 HttpClient::HttpClient()
 	: m_timeout(0)
 	, m_retCode(CURL_LAST)
+	, m_httpCode(0)
 	, m_autoRedirect(true)
 	, m_maxRedirect(5)
 	, m_isInnerPost(false)
@@ -127,25 +128,25 @@ bool HttpClient::Do()
 			if (ff.fieldType == ftNormal)
 			{
 				formCode = curl_formadd(&post, &last,
-					CURLFORM_COPYNAME, ff.fieldName.c_str(),
-					CURLFORM_COPYCONTENTS, ff.fieldValue.c_str(),
+					CURLFORM_COPYNAME, ff.fieldName,
+					CURLFORM_COPYCONTENTS, (ff.fieldValue ? ff.fieldValue : ""),
 					CURLFORM_END);
 			}
 			else if (ff.fieldType == ftFile)
 			{
-				if (ff.fileName.empty() || ff.fileName == "")
+				if (!ff.fileName)
 				{
 					formCode = curl_formadd(&post, &last,
-						CURLFORM_COPYNAME, ff.fieldName.c_str(),
-						CURLFORM_FILE, ff.fieldValue.c_str(),
+						CURLFORM_COPYNAME, ff.fieldName,
+						CURLFORM_FILE, (ff.fieldValue ? ff.fieldValue : ""),
 						CURLFORM_END);
 				}
 				else
 				{
 					formCode = curl_formadd(&post, &last,
-						CURLFORM_COPYNAME, ff.fieldName.c_str(),
-						CURLFORM_FILE, ff.fieldValue.c_str(),
-						CURLFORM_FILENAME, ff.fileName.c_str(),
+						CURLFORM_COPYNAME, ff.fieldName,
+						CURLFORM_FILE, (ff.fieldValue ? ff.fieldValue : ""),
+						CURLFORM_FILENAME, ff.fileName,
 						CURLFORM_END);
 				}
 			}
@@ -176,26 +177,26 @@ bool HttpClient::Do()
 				curl_mimepart *part = curl_mime_addpart(mime);
 
 				//set data
-				if (mpf.contenxtData.size() > 0)
+				if (mpf.contenxtData)
 				{
-					curl_mime_data(part, &mpf.contenxtData[0], mpf.contenxtData.size());
+					curl_mime_data(part, mpf.contenxtData, (mpf.contenxtDataSize > 0 ? mpf.contenxtDataSize : strlen(mpf.contenxtData)));
 				}
-				else if (mpf.filePath.size() > 0)
+				else if (mpf.filePath)
 				{
-					curl_mime_filedata(part, mpf.filePath.c_str());
+					curl_mime_filedata(part, mpf.filePath);
 				}
 
 				//set name 
-				if (mpf.multipartName.size() > 0)
-					curl_mime_name(part, mpf.multipartName.c_str());
+				if (mpf.multipartName)
+					curl_mime_name(part, mpf.multipartName);
 
 				//set filename
-				if (mpf.fileName.size() > 0)
-					curl_mime_filename(part, mpf.fileName.c_str());
+				if (mpf.fileName)
+					curl_mime_filename(part, mpf.fileName);
 
 				//set mime type
-				if (mpf.mimeType.size() > 0)
-					curl_mime_type(part, mpf.mimeType.c_str());
+				if (mpf.mimeType)
+					curl_mime_type(part, mpf.mimeType);
 			}
 
 			curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);

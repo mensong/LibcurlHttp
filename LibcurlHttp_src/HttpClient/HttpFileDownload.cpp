@@ -4,7 +4,8 @@
 #include "../HttpHelper/UrlCoding.h"
 
 HttpFileDownload::HttpFileDownload()
-	: m_fd(NULL)
+	: HttpClient()
+	, m_fd(NULL)
 {
 	
 }

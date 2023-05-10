@@ -6,6 +6,7 @@
 #include "LibcurlHttp.h"
 #include <string>
 #include <iostream>
+#include "..\pystring\pystring.h"
 
 
 int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData)
@@ -21,7 +22,7 @@ int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow
 	return 0;
 }
 
-int main()
+int main(int argc, char** argv)
 {
 	//去除光标
 	HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -115,7 +116,20 @@ int main()
 
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
-	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:");
+	//HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:");
+	
+	HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UID_", "1683713596455018edb9b-ffbc-4684-80f7-ac4519c24eba1683713596455");
+	HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UserName_", "liaomp2");
+	HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_Function_", "PDM-Server");
+
+	std::string filename = http->UrlUTF8Encode("我A97.SLDPRT");
+	MultipartField mf(NULL, 0, "E:\\我A97.SLDPRT", filename.c_str(), "file", NULL);
+	int httpCode = http->postMultipart("https://plmfile-uat1.meicloud.com/RD-FileServer/ObjectContentUploadAction/uploadFile?userName=liaomp2", &mf, 1);
+	mf.Release();
+	int len = 0;
+	const char* body = http->getBody(len);
+	std::string sBody = http->UTF8ToAnsi(body);
+
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 
     return 0;

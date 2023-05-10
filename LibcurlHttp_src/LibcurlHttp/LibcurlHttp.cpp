@@ -199,19 +199,10 @@ public:
 
 		for (int i = 0; i < nCountFormData; ++i)
 		{
-			FormField ff;
-			if (formDataArr[i].fieldName.size() == 0)
+			if (formDataArr[i].fieldName == NULL)
 				continue;
-			ff.fieldName = formDataArr[i].fieldName.c_str();
-			ff.fieldValue = formDataArr[i].fieldValue.c_str();
-			ff.fieldType = formDataArr[i].fieldType;
-			if (formDataArr[i].fieldType == ftFile)
-			{
-				ff.fieldType = ftFile;
-				ff.fileName = formDataArr[i].fileName.c_str();
-			}
-
-			httpClient.AddFormField(ff);
+			
+			httpClient.AddFormField(formDataArr[i]);
 		}
 
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
@@ -322,13 +313,7 @@ public:
 
 		for (int i = 0; i < nCountMultipartData; ++i)
 		{
-			MultipartField mf;
-			mf.contenxtData = multipartDataArr[i].contenxtData;
-			mf.filePath = multipartDataArr[i].filePath;
-			mf.fileName = multipartDataArr[i].fileName;
-			mf.multipartName = multipartDataArr[i].multipartName;
-			mf.mimeType = multipartDataArr[i].mimeType;
-			httpClient.AddMultipartField(mf);
+			httpClient.AddMultipartField(multipartDataArr[i]);
 		}
 
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);

@@ -16,20 +16,185 @@ typedef enum FieldType
 typedef struct FormField
 {
 	FieldType fieldType;
-	std::string fieldName;
-	std::string fieldValue;
-	std::string fileName;//只有在文件类型才有效
+	char* fieldName;
+	char* fieldValue;
+	//int fieldValueSize;
+	char* fileName;//只有在文件类型才有效
+
+	FormField()
+	{
+		fieldType = ftNormal;
+		fieldName = NULL;
+		fieldValue = NULL;
+		//fieldValueSize = 0;
+		fileName = NULL;
+	}
+
+	FormField(FieldType fieldType, const char* fieldName, const char* fieldValue, const char* fileName)
+	{
+		this->fieldType = fieldType;
+		this->fieldName = NULL;
+		this->fieldValue = NULL;
+		//this->fieldValueSize = 0;
+		this->fileName = NULL;
+
+		if (fieldName)
+		{
+			size_t len = strlen(fieldName);
+			this->fieldName = new char[len + 1];
+			strcpy_s(this->fieldName, len + 1, fieldName);
+		}
+		
+		if (fieldValue)
+		{
+			size_t len = strlen(fieldValue);
+			this->fieldValue = new char[len + 1];
+			strcpy_s(this->fieldValue, len + 1, fieldValue);
+		}
+
+		if (fileName)
+		{
+			size_t len = strlen(fileName);
+			this->fileName = new char[len + 1];
+			strcpy_s(this->fileName, len + 1, fileName);
+		}
+	}
+
+	void Release()
+	{
+		if (fieldName)
+		{
+			delete[] fieldName;
+			fieldName = NULL;
+		}
+		if (fieldValue)
+		{
+			delete[] fieldValue;
+			fieldValue = NULL;
+		}
+		if (fileName)
+		{
+			delete[] fileName;
+			fileName = NULL;
+		}
+	}
 } FormField;
 
 typedef struct MultipartField
 {
-	std::string contenxtData;	//提交的是直接指定的内容，该字段有内容时，filePath字段无效
-	std::string filePath;		//提交的是文件，contenxtData有内容时，该字段无效
-	
-	std::string fileName;			//指定文件名	
-	std::string multipartName;		//名称
-	std::string mimeType;			//Mime type
+	char* contenxtData;	//提交的是直接指定的内容，该字段有内容时，filePath字段无效
+	int contenxtDataSize;
 
+	char* filePath;		//提交的是文件，contenxtData有内容时，该字段无效
+	
+	char* fileName;			//指定文件名	
+	char* multipartName;	//名称
+	char* mimeType;			//Mime type
+
+	MultipartField()
+	{
+		contenxtData = NULL;
+		contenxtDataSize = 0;
+		filePath = NULL;
+		fileName = NULL;
+		multipartName = NULL;
+		mimeType = NULL;
+	}
+
+	MultipartField(
+		const char* contenxtData, int contenxtDataSize, 
+		const char* filePath, 
+		const char* fileName, 
+		const char* multipartName, 
+		const char* mimeType)
+	{
+		this->contenxtData = NULL;
+		this->contenxtDataSize = 0;
+		this->filePath = NULL;
+		this->fileName = NULL;
+		this->multipartName = NULL;
+		this->mimeType = NULL;
+
+		if (contenxtData <= 0)
+		{
+			if (contenxtData)
+				contenxtDataSize = strlen(contenxtData);
+			else
+				contenxtDataSize = 0;
+		}
+
+		if (contenxtData)
+		{
+			if (contenxtDataSize == 0)
+			{
+				this->contenxtData = new char[1];
+				this->contenxtData[0] = '\0';
+			}
+			else
+			{
+				this->contenxtData = new char[contenxtDataSize + 1];
+				memset(this->contenxtData, 0, contenxtDataSize + 1);
+				memcpy_s(this->contenxtData, contenxtDataSize + 1, contenxtData, contenxtDataSize);
+			}
+		}
+
+		if (filePath)
+		{
+			size_t len = strlen(filePath);
+			this->filePath = new char[len + 1];
+			strcpy_s(this->filePath, len + 1, filePath);
+		}
+
+		if (fileName)
+		{
+			size_t len = strlen(fileName);
+			this->fileName = new char[len + 1];
+			strcpy_s(this->fileName, len + 1, fileName);
+		}
+
+		if (multipartName)
+		{
+			size_t len = strlen(multipartName);
+			this->multipartName = new char[len + 1];
+			strcpy_s(this->multipartName, len + 1, multipartName);
+		}
+
+		if (mimeType)
+		{
+			size_t len = strlen(mimeType);
+			this->mimeType = new char[len + 1];
+			strcpy_s(this->mimeType, len + 1, mimeType);
+		}
+	}
+
+	void Release()
+	{
+		if (contenxtData)
+		{
+			delete[] contenxtData;
+			contenxtData = NULL;
+		}
+		if (filePath)
+		{
+			delete[] filePath;
+			filePath = NULL;
+		}
+		if (fileName)
+		{
+			delete[] fileName;
+			fileName = NULL;
+		}
+		if (multipartName)
+		{
+			delete[] multipartName;
+			multipartName = NULL;
+		}
+		if (mimeType)
+		{
+			delete[] mimeType;
+			mimeType = NULL;
+		}
+	}
 } MultipartField;
 
 //进度回调原型 int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData);

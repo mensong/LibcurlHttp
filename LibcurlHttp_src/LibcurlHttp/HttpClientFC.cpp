@@ -3,7 +3,8 @@
 
 
 HttpClientFC::HttpClientFC()
-	: m_progressCallback(NULL)
+	: HttpClient()
+	, m_progressCallback(NULL)
 	, m_userData(NULL)
 {
 }
