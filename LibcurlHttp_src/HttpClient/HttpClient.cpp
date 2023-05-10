@@ -197,6 +197,8 @@ bool HttpClient::Do()
 				if (mpf.mimeType.size() > 0)
 					curl_mime_type(part, mpf.mimeType.c_str());
 			}
+
+			curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 		}
 		
 	}
