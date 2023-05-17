@@ -5,7 +5,7 @@
 HttpClient::HttpClient()
 	: m_timeout(0)
 	, m_retCode(CURL_LAST)
-	, m_httpCode(0)
+	, m_httpCode(-99999)
 	, m_autoRedirect(true)
 	, m_maxRedirect(5)
 	, m_isInnerPost(false)
@@ -53,9 +53,12 @@ bool HttpClient::Do()
 
 	HttpClient* _THIS = this;
 
-	std::string url = _THIS->GetUrl().c_str();
-	if (url == "" || url.empty())
+	std::string url = GetUrl().c_str();
+	if (url.c_str()[0] == '\0')
+	{
+		m_httpCode = HttpDoErrorCode::ecUrlError;
 		return false;
+	}
 
 	//初始化curl，这个是必须的
 	CURL* curl = curl_easy_init();
@@ -73,21 +76,21 @@ bool HttpClient::Do()
 	//支持https
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-	
+
 	// 设置301、302跳转跟随location
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, m_autoRedirect? 1L : 0L);
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, m_autoRedirect ? 1L : 0L);
 	// 设置重定向的最大次数
 	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, m_maxRedirect);
 
 	/** set user agent */
-	if (_THIS->GetUserAgent().size() > 0)
-		curl_easy_setopt(curl, CURLOPT_USERAGENT, _THIS->GetUserAgent().c_str());
+	if (GetUserAgent().size() > 0)
+		curl_easy_setopt(curl, CURLOPT_USERAGENT, GetUserAgent().c_str());
 
 	/** set headers */
 	curl_slist* headerList = NULL;
 	std::string headerString;
-	for (std::map<std::string, std::string>::iterator it = _THIS->m_headers.begin();
-		it != _THIS->m_headers.end(); ++it)
+	for (std::map<std::string, std::string>::iterator it = m_headers.begin();
+	it != m_headers.end(); ++it)
 	{
 		if (it->first.empty())
 			continue;
@@ -97,34 +100,40 @@ bool HttpClient::Do()
 		headerList = curl_slist_append(headerList, headerString.c_str());
 	}
 	if (headerList)
-		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
+	{
+		CURLcode code = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
+		if (code != CURLcode::CURLE_OK)
+		{
+			m_httpCode = code;
+			return false;
+		}
+	}
 
 	/** time out */
-	if (_THIS->GetTimeout() > 0)
+	if (GetTimeout() > 0)
 	{
 		//连接超时，这个数值如果设置太短可能导致数据请求不到就断开了
-		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, _THIS->GetTimeout());
+		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, GetTimeout());
 		//接收数据时超时设置，如果GetTimeout()秒内数据未接收完，直接退出
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, _THIS->GetTimeout());
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, GetTimeout());
 		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 	}
-	
+
 	/** set body */
 	std::string sMethod;
 	struct curl_httppost* post = NULL;
 	curl_mime *mime = NULL;
-	if (_THIS->m_formFields.size() > 0)
+	if (m_formFields.size() > 0)
 	{
-		sMethod = _THIS->GetCustomMothod("POST");
-
+		sMethod = GetCustomMothod("POST");
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
 		//post form
 		struct curl_httppost* last = NULL;
-		for (int i = 0; i < (int)_THIS->m_formFields.size(); ++i)
+		for (int i = 0; i < (int)m_formFields.size(); ++i)
 		{
-			CURLFORMcode formCode = CURL_FORMADD_NULL;
-			FormField& ff = _THIS->m_formFields[i];
+			CURLFORMcode formCode = CURL_FORMADD_OK;
+			FormField& ff = m_formFields[i];
 			if (ff.fieldType == ftNormal)
 			{
 				formCode = curl_formadd(&post, &last,
@@ -151,29 +160,51 @@ bool HttpClient::Do()
 				}
 			}
 		}
-		curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
+		if (post)
+		{
+			CURLcode code = curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
+			if (code != CURLcode::CURLE_OK)
+			{
+				m_httpCode = code;
+				return false;
+			}
+		}
+		else
+		{
+			m_httpCode = HttpDoErrorCode::ecDataError;
+			return false;
+		}
 	}
-	else if (_THIS->m_postData.size() > 0)
+	else if (m_postData.size() > 0)
 	{
-		sMethod = _THIS->GetCustomMothod("POST");
-
+		sMethod = GetCustomMothod("POST");
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
 		/** set post fields */
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, _THIS->m_postData.c_str());
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, _THIS->m_postData.size());
+		CURLcode code = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, m_postData.c_str());
+		if (code != CURLcode::CURLE_OK)
+		{
+			m_httpCode = code;
+			return false;
+		}
+		code = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, m_postData.size());
+		if (code != CURLcode::CURLE_OK)
+		{
+			m_httpCode = code;
+			return false;
+		}
 	}
-	else if (_THIS->m_multipartFields.size() > 0)
+	else if (m_multipartFields.size() > 0)
 	{
-		sMethod = _THIS->GetCustomMothod("POST");
+		sMethod = GetCustomMothod("POST");
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
-		
+
 		mime = curl_mime_init(curl);
 		if (mime)
 		{
-			for (int i = 0; i < _THIS->m_multipartFields.size(); ++i)
+			for (int i = 0; i < m_multipartFields.size(); ++i)
 			{
-				const MultipartField& mpf = _THIS->m_multipartFields[i];
+				const MultipartField& mpf = m_multipartFields[i];
 				curl_mimepart *part = curl_mime_addpart(mime);
 
 				//set data
@@ -199,46 +230,57 @@ bool HttpClient::Do()
 					curl_mime_type(part, mpf.mimeType);
 			}
 
-			curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+			CURLcode code = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+			if (code != CURLcode::CURLE_OK)
+			{
+				m_httpCode = code;
+				return false;
+			}
 		}
-		
+		else
+		{
+			m_httpCode = HttpDoErrorCode::ecDataError;
+			return false;
+		}
 	}
 	else
 	{
 		if (m_isInnerPost)
-			sMethod = _THIS->GetCustomMothod("POST");
+			sMethod = GetCustomMothod("POST");
 		else
-			sMethod = _THIS->GetCustomMothod("GET");
+			sMethod = GetCustomMothod("GET");
 	}
 
 	/** set custom method */
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
+	CURLcode code = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
+	if (code != CURLcode::CURLE_OK)
+	{
+		m_httpCode = code;
+		return false;
+	}
 
 	/** 开始执行请求 */
-	_THIS->m_retCode = curl_easy_perform(curl);
+	m_retCode = curl_easy_perform(curl);
 	//查看是否有出错信息
 	//const char* pError = curl_easy_strerror(m_retCode);
 
-	if (_THIS->m_retCode != CURLE_OK)
+	if (m_retCode != CURLE_OK)
 	{
-		switch (_THIS->m_retCode)
-		{
-		case CURLE_OPERATION_TIMEDOUT:
-		case CURLE_SSL_CERTPROBLEM:
-			_THIS->m_httpCode = _THIS->m_retCode;
-			break;
-		}
+		m_httpCode = m_retCode;
 	}
 	else
 	{
 		int64_t http_code = 0;
-		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-		_THIS->m_httpCode = static_cast<int>(http_code);
+		CURLcode code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+		if (code == CURLcode::CURLE_OK)
+			m_httpCode = static_cast<int>(http_code);
+		else
+			m_httpCode = code;
 	}
 
 	if (post)
 		curl_formfree(post);
-	
+
 	if (mime)
 		curl_mime_free(mime);
 
@@ -248,7 +290,7 @@ bool HttpClient::Do()
 	//清理curl，和前面的初始化匹配
 	curl_easy_cleanup(curl);
 
-	_THIS->OnDone(_THIS->m_retCode);
+	OnDone(m_retCode);
 
 	return true;
 }
@@ -292,11 +334,11 @@ size_t HttpClient::_HeaderCallback(void *data, size_t size, size_t nmemb, void *
 	HttpClient* _THIS = reinterpret_cast<HttpClient*>(userdata);
 	std::string header(reinterpret_cast<char*>(data), size*nmemb);
 	size_t seperator = header.find_first_of(':');
-	if (std::string::npos == seperator) 
+	if (std::string::npos == seperator)
 	{
 		// roll with non seperated headers...
 		trim(header);
-		if (0 == header.length()) 
+		if (0 == header.length())
 		{
 			return (size * nmemb);  // blank line;
 		}

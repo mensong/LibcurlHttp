@@ -23,6 +23,7 @@ protected:
 
 protected:
 	std::string getTimesampFileName();
+	bool createDirs(const std::string& dir);
 
 private:
 	std::string m_file;

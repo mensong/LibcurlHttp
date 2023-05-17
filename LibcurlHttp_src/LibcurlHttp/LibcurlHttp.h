@@ -7,6 +7,12 @@
 #define LIBCURLHTTP_API extern "C" __declspec(dllimport)
 #endif
 
+typedef enum HttpDoErrorCode
+{
+	ecUrlError = -1,
+	ecDataError = -2,
+} HttpDoErrorCode;
+
 typedef enum FieldType
 {
 	ftNormal,

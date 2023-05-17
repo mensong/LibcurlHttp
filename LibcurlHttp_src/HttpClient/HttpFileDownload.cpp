@@ -2,6 +2,8 @@
 #include "pystring.h"
 #include "../HttpHelper/Convertor.h"
 #include "../HttpHelper/UrlCoding.h"
+#include <thread>
+#include <sstream>
 
 HttpFileDownload::HttpFileDownload()
 	: HttpClient()
@@ -61,7 +63,51 @@ void HttpFileDownload::closeFile()
 
 std::string HttpFileDownload::getTimesampFileName()
 {
-	return std::to_string(::GetTickCount64()) + ".tmp";
+	std::stringstream ss;
+	ss << std::this_thread::get_id();
+	ss << "-";
+	ss << ::GetTickCount64();
+	ss << ".tmp";
+	return ss.str();
+}
+
+bool HttpFileDownload::createDirs(const std::string & dir)
+{
+	std::string strDir(dir);//存放要创建的目录字符串
+
+	 //确保以'\'结尾以创建最后一个目录
+	char c = strDir[strDir.length() - 1];
+	if (c != '\\' && c != '/')
+	{
+		strDir += '\\';
+	}
+	std::vector<std::string> vPath;//存放每一层目录字符串
+	std::string strTemp;//一个临时变量,存放目录字符串
+	bool bSuccess = false;//成功标志
+	//遍历要创建的字符串
+	for (int i = 0; i < strDir.length(); ++i)
+	{
+		c = strDir[i];
+		if (c != '\\' && c != '/')
+		{//如果当前字符不是'\\'
+			strTemp += strDir[i];
+		}
+		else
+		{//如果当前字符是'\\'
+			vPath.push_back(strTemp);//将当前层的字符串添加到数组中
+			strTemp += '\\';
+		}
+	}
+
+	//遍历存放目录的数组,创建每层目录
+	std::vector<std::string>::const_iterator vIter;
+	for (vIter = vPath.begin(); vIter != vPath.end(); ++vIter)
+	{
+		//如果CreateDirectory执行成功,返回true,否则返回false
+		bSuccess = CreateDirectoryA(vIter->c_str(), NULL) ? true : false;
+	}
+
+	return bSuccess;
 }
 
 
@@ -89,17 +135,36 @@ bool HttpFileDownload::Do()
 	}	
 	else
 	{
+		std::string dir;
+
 		//只设置了目录
 		DWORD dwAttr = ::GetFileAttributesA(m_file.c_str());
 		if (dwAttr & FILE_ATTRIBUTE_DIRECTORY)
 		{// 如果是目录
-			saveFileName = pystring::os::path::join(m_file, getTimesampFileName());
+			dir = m_file;
+			saveFileName = pystring::os::path::normpath(pystring::os::path::join(m_file, getTimesampFileName()));
 			needRename = true;
 		}
 		else
 		{//设置了具体文件路径
-			saveFileName = m_file;
+			//再次判断是否是目录
+			char c = m_file[pystring::length(m_file) - 1];
+			if (c == '\\' || c == '/')
+			{
+				dir = m_file;
+				saveFileName = pystring::os::path::normpath(pystring::os::path::join(m_file, getTimesampFileName()));
+				needRename = true;
+			}
+			else
+			{
+				dir = pystring::os::path::dirname(m_file);
+				saveFileName = pystring::os::path::normpath(m_file);
+			}
 		}
+
+		//确保目录存在
+		if (dir.c_str()[0] != '\0')
+			createDirs(dir);
 	}
 
 	if (!SetFileName(saveFileName))

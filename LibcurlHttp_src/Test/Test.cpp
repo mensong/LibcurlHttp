@@ -115,20 +115,21 @@ int main(int argc, char** argv)
 	//int code = HTTP_CLIENT::Ins().download("https://down12.wsyhn.com/app/yinghuaxuexiaomoniqi.apk", NULL);
 
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
-	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
-	//HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:");
-	
-	HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UID_", "1683713596455018edb9b-ffbc-4684-80f7-ac4519c24eba1683713596455");
-	HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UserName_", "liaomp2");
-	HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_Function_", "PDM-Server");
 
-	std::string filename = http->UrlUTF8Encode("ÎÒA97.SLDPRT");
-	MultipartField mf(NULL, 0, "E:\\ÎÒA97.SLDPRT", filename.c_str(), "file", NULL);
-	int httpCode = http->postMultipart("https://plmfile-uat1.meicloud.com/RD-FileServer/ObjectContentUploadAction/uploadFile?userName=liaomp2", &mf, 1);
-	mf.Release();
-	int len = 0;
-	const char* body = http->getBody(len);
-	std::string sBody = http->UTF8ToAnsi(body);
+	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
+	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//");
+	
+	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UID_", "1683766301063faec713a-1cbb-40ef-9baa-9886570eb00c1683766301063");
+	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UserName_", "liaomp2");
+	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_Function_", "PDM-Server");
+
+	//std::string filename = http->UrlUTF8Encode("se.zip");
+	//MultipartField mf(NULL, 0, "E:\\se.zip", NULL, NULL, NULL);
+	//int httpCode = http->postMultipart("http://127.0.0.1/upload/", &mf, 1);
+	//mf.Release();
+	//int len = 0;
+	//const char* body = http->getBody(len);
+	//std::string sBody = http->UTF8ToAnsi(body);
 
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 
