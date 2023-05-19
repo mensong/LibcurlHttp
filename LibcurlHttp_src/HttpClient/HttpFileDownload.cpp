@@ -176,45 +176,75 @@ bool HttpFileDownload::Do()
 	//从response中获得文件名
 	if (needRename && ret)
 	{
-		//获取文件名编码
-		bool bIsUtf8 = false;
-		auto ContentType = this->GetResponseHeaders().find("Content-Type");
-		if (ContentType != this->GetResponseHeaders().end())
-		{
-			for (size_t i = 0; i < ContentType->second.size(); i++)
-			{
-				const std::string& line = pystring::upper(ContentType->second[i]);
-				if (line.find("UTF-8") != std::string::npos || line.find("UTF8") != std::string::npos)
-					bIsUtf8 = true;
-			}
-		}
-
-		//获取文件名
 		auto ContentDisposition = this->GetResponseHeaders().find("Content-Disposition");
 		if (ContentDisposition != this->GetResponseHeaders().end())
 		{
+			//获取文件名编码
+			bool bIsUtf8 = false;
+			for (size_t i = 0; i < ContentDisposition->second.size(); i++)
+			{
+				const std::string& line = pystring::upper(ContentDisposition->second[i]);
+				if (line.find("*=\"UTF-8''") != std::string::npos || line.find("*=\"UTF8''") != std::string::npos)
+				{
+					bIsUtf8 = true;
+					break;
+				}
+			}			
+			if (!bIsUtf8)
+			{
+				auto ContentType = this->GetResponseHeaders().find("Content-Type");
+				if (ContentType != this->GetResponseHeaders().end())
+				{
+					for (size_t i = 0; i < ContentType->second.size(); i++)
+					{
+						const std::string& line = pystring::upper(ContentType->second[i]);
+						if (line.find("UTF-8") != std::string::npos || line.find("UTF8") != std::string::npos)
+						{
+							bIsUtf8 = true;
+							break;
+						}
+					}
+				}
+			}
+
+			//获取文件名
+			std::string fileName;
 			for (size_t i = 0; i < ContentDisposition->second.size(); i++)
 			{
 				const std::string& line = ContentDisposition->second[i];
 				size_t idx = line.find("filename=");
 				if (idx != std::string::npos)
 				{
-					std::string fileName = pystring::strip(line.substr(idx + 9), "\"");
-					if (bIsUtf8)
+					fileName = pystring::strip(line.substr(idx + 9), "\"");
+					break;
+				}
+				else if ((idx = line.find("filename*=")) != std::string::npos)
+				{
+					fileName = pystring::strip(line.substr(idx + 10), "\"");
+					idx = fileName.find("''");
+					if (idx != std::string::npos)
 					{
-						fileName = GL::Utf82Ansi(fileName.c_str());
+						fileName = fileName.substr(idx + 2);
+						break;
 					}
-
-					std::string targetFileName = pystring::os::path::dirname(saveFileName);
-					if (!targetFileName.empty())
-						targetFileName = pystring::os::path::join(targetFileName, fileName);
-					else
-						targetFileName = fileName;
-					//执行重命名
-					::MoveFileA(saveFileName.c_str(), targetFileName.c_str());
 				}
 			}
-		}		
+
+			//执行重命名
+			if (!fileName.empty())
+			{
+				if (bIsUtf8)
+					fileName = GL::Utf82Ansi(fileName.c_str());
+				std::string targetFileName = pystring::os::path::dirname(saveFileName);
+				if (!targetFileName.empty())
+					targetFileName = pystring::os::path::join(targetFileName, fileName);
+				else
+					targetFileName = fileName;
+				//执行重命名
+				::MoveFileA(saveFileName.c_str(), targetFileName.c_str());
+			}
+
+		}
 	}
 
 	return ret;
