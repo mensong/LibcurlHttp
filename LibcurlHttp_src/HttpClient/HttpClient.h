@@ -8,6 +8,24 @@
 #include <curl/curl.h>
 #include "../LibcurlHttp/LibcurlHttp.h"
 
+///////////////////////////////////////////////////////////
+//openssl 1.0.2 不是线程安全的，若要启动线程安全机制，需要自定义实现 openssl 用到的全局锁（大概是41个），并提供一个锁定/释放的 callback 函数
+//https://curl.se/libcurl/c/threadsafe.html
+#include <mutex>
+class SslCurlWrapper
+{
+private:
+	static std::vector<std::mutex> vectorOfSslMutex;
+
+	static unsigned long id_function();
+	static void locking_function(int mode, int n, const char * file, int line);
+
+public:
+	SslCurlWrapper();
+	~SslCurlWrapper();
+};
+///////////////////////////////////////////////////////////
+
 typedef std::map< std::string, std::vector<std::string> > ResponseHeaderFields;
 
 class HttpClient
@@ -116,5 +134,9 @@ protected:
 	int m_httpCode;
 	std::string m_body;
 	ResponseHeaderFields m_responseHeaders;
+
+private:
+	//多线程时防止崩溃
+	static SslCurlWrapper s_sslObject;
 };
 
