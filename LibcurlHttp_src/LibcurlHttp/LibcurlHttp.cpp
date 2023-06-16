@@ -363,7 +363,7 @@ public:
 		m_customMothod = mothod;
 	}
 
-	virtual int download(const char* url, const char* localFileName = NULL) override
+	virtual int download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) override
 	{
 		HttpFileDownloadFC downloader;
 
@@ -385,6 +385,10 @@ public:
 		m_responseHeaders = downloader.GetResponseHeaders();
 
 		m_customMothod = "";
+
+		if (downloadedFileName)
+			strcpy(downloadedFileName, downloader.GetFileName().c_str());
+
 		return m_responseCode;
 	}
 	
@@ -651,9 +655,9 @@ LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...)
 	return ret;
 }
 
-LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName/*=NULL*/)
+LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName/*=NULL*/, char* downloadedFileName/* = NULL*/)
 {
-	return http->download(url, localFileName);
+	return http->download(url, localFileName, downloadedFileName);
 }
 
 LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCountFormData)

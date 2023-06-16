@@ -263,7 +263,9 @@ public:
 	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) = 0;
 		
 	//下载网络文件到本地
-	virtual int download(const char* url, const char* localFileName = NULL) = 0;
+	// localFileName - 想要保存到的文件路径或目录，如果是目录则会在此目录下根据Content-Disposition的描述自动获取文件名或生成一个临时文件名
+	// downloadedFileName - 实际保存到的文件路径，char outFileName[MAX_PATH]; download("https://123", NULL, outFileName);
+	virtual int download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) = 0;
 	
 	//获得提交后的body内容
 	virtual const char* getBody(int& len) = 0;
@@ -313,7 +315,7 @@ LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url);
 LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...);
 LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
 LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...);
-LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName = NULL);
+LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL);
 LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCountFormData);
 LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...);
 LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
@@ -357,7 +359,7 @@ public:
 	typedef int(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
 	typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
 	typedef int(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
-	typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName);
+	typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName, char* downloadedFileName);
 	typedef int(*FN_postForm)(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCoutFormData);
 	typedef int(*FN_postForm_a)(LibcurlHttp* http, const char* url, ...);
 	typedef int(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);

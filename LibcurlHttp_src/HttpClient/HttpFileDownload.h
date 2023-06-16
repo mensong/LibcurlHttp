@@ -25,8 +25,9 @@ protected:
 	std::string getTimesampFileName();
 	bool createDirs(const std::string& dir);
 
-private:
+protected:
 	std::string m_file;
+private:
 	FILE* m_fd;
 };
 

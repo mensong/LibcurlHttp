@@ -242,6 +242,8 @@ bool HttpFileDownload::Do()
 					targetFileName = fileName;
 				//Ö´ÐÐÖØÃüÃû
 				::MoveFileA(saveFileName.c_str(), targetFileName.c_str());
+
+				m_file = targetFileName;
 			}
 
 		}

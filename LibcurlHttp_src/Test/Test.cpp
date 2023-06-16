@@ -112,12 +112,13 @@ int main(int argc, char** argv)
 	//std::wcout << ws.c_str() << std::endl;
 
 	//HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
-	//int code = HTTP_CLIENT::Ins().download("https://down12.wsyhn.com/app/yinghuaxuexiaomoniqi.apk", NULL);
+	//int code = HTTP_CLIENT::Ins().download("https://down12.wsyhn.com/app/yinghuaxuexiaomoniqi.apk", NULL, NULL);
 
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
 	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
-	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//");
+	char downloadedFileName[MAX_PATH];
+	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//", downloadedFileName);
 	
 	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UID_", "1683766301063faec713a-1cbb-40ef-9baa-9886570eb00c1683766301063");
 	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UserName_", "liaomp2");
