@@ -7,7 +7,7 @@
 #include "HttpFileDownloadFC.h"
 #include "..\HttpHelper\UrlCoding.h"
 #include "..\HttpHelper\Convertor.h"
-
+#include "pystring.h"
 
 class LibcurlHttpImp
 	: public LibcurlHttp
@@ -412,7 +412,7 @@ public:
 	virtual const char* getResponseHeaderKey(int i) override
 	{
 		if (i >= (int)m_responseHeaders.size())
-			return NULL;
+			return "";
 
 		ResponseHeaderFields::iterator it = m_responseHeaders.begin();
 		while (i--)
@@ -423,37 +423,67 @@ public:
 		return it->first.c_str();
 	}
 
-	virtual int getResponseHeadersCount(const char* key) override
+	virtual int getResponseHeadersCount(const char* key, bool ignoreCase = false) override
 	{
 		if (!key)
 		{
 			return 0;
 		}
 
-		ResponseHeaderFields::iterator itFinder = m_responseHeaders.find(key);
-		if (itFinder == m_responseHeaders.end())
+		ResponseHeaderFields::iterator itFinder;
+		if (!ignoreCase)
 		{
-			return 0;
+			itFinder = m_responseHeaders.find(key);
+		}
+		else
+		{
+			for (itFinder = m_responseHeaders.begin(); itFinder != m_responseHeaders.end(); ++itFinder)
+			{
+				if (pystring::equal(itFinder->first, key, true))
+				{
+					break;
+				}
+			}
 		}
 		
-		return (int)itFinder->second.size();		
+		if (itFinder == m_responseHeaders.end())
+		{
+			return 0;
+		}
+		return (int)itFinder->second.size();
 	}
 
-	virtual const char* getResponseHeader(const char* key, int i) override
+	virtual const char* getResponseHeader(const char* key, int i, bool ignoreCase = false) override
 	{
 		if (!key)
 		{
-			return NULL;
+			return "";
 		}
 
-		ResponseHeaderFields::iterator itFinder = m_responseHeaders.find(key);
+		ResponseHeaderFields::iterator itFinder;
+		if (!ignoreCase)
+		{
+			itFinder = m_responseHeaders.find(key);
+		}
+		else
+		{
+			for (itFinder = m_responseHeaders.begin(); itFinder != m_responseHeaders.end(); ++itFinder)
+			{
+				if (pystring::equal(itFinder->first, key, true))
+				{
+					break;
+				}
+			}
+		}
+
 		if (itFinder == m_responseHeaders.end())
 		{
-			return NULL;
+			return "";
 		}
-
 		if (i >= (int)itFinder->second.size())
-			return NULL;
+		{
+			return "";
+		}
 
 		return itFinder->second[i].c_str();
 	}
@@ -702,14 +732,14 @@ LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i)
 	return http->getResponseHeaderKey(i);
 }
 
-LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key)
+LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key, bool ignoreCase)
 {
-	return http->getResponseHeadersCount(key);
+	return http->getResponseHeadersCount(key, ignoreCase);
 }
 
-LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key, int i)
+LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key, int i, bool ignoreCase)
 {
-	return http->getResponseHeader(key, i);
+	return http->getResponseHeader(key, i, ignoreCase);
 }
 
 LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn)

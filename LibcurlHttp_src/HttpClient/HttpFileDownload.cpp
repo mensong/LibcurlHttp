@@ -142,7 +142,7 @@ bool HttpFileDownload::Do()
 		if (dwAttr & FILE_ATTRIBUTE_DIRECTORY)
 		{// 如果是目录
 			dir = m_file;
-			saveFileName = pystring::os::path::normpath(pystring::os::path::join(m_file, getTimesampFileName()));
+			saveFileName = os_path::normpath(os_path::join(m_file, getTimesampFileName()));
 			needRename = true;
 		}
 		else
@@ -152,13 +152,13 @@ bool HttpFileDownload::Do()
 			if (c == '\\' || c == '/')
 			{
 				dir = m_file;
-				saveFileName = pystring::os::path::normpath(pystring::os::path::join(m_file, getTimesampFileName()));
+				saveFileName = os_path::normpath(os_path::join(m_file, getTimesampFileName()));
 				needRename = true;
 			}
 			else
 			{
-				dir = pystring::os::path::dirname(m_file);
-				saveFileName = pystring::os::path::normpath(m_file);
+				dir = os_path::dirname(m_file);
+				saveFileName = os_path::normpath(m_file);
 			}
 		}
 
@@ -176,14 +176,16 @@ bool HttpFileDownload::Do()
 	//从response中获得文件名
 	if (needRename && ret)
 	{
-		auto ContentDisposition = this->GetResponseHeaders().find("Content-Disposition");
-		if (ContentDisposition != this->GetResponseHeaders().end())
+		std::vector<std::string> ContentDisposition = this->GetResponseHeaders("Content-Disposition", false);
+		if (ContentDisposition.size() == 0)
+			ContentDisposition = this->GetResponseHeaders("Content-Disposition", true);
+		if (ContentDisposition.size() > 0)
 		{
 			//获取文件名编码
 			bool bIsUtf8 = false;
-			for (size_t i = 0; i < ContentDisposition->second.size(); i++)
+			for (size_t i = 0; i < ContentDisposition.size(); i++)
 			{
-				const std::string& line = pystring::upper(ContentDisposition->second[i]);
+				const std::string& line = pystring::upper(ContentDisposition[i]);
 				if (line.find("*=\"UTF-8''") != std::string::npos || line.find("*=\"UTF8''") != std::string::npos)
 				{
 					bIsUtf8 = true;
@@ -192,12 +194,14 @@ bool HttpFileDownload::Do()
 			}			
 			if (!bIsUtf8)
 			{
-				auto ContentType = this->GetResponseHeaders().find("Content-Type");
-				if (ContentType != this->GetResponseHeaders().end())
+				std::vector<std::string> ContentType = this->GetResponseHeaders("Content-Type", false);
+				if (ContentType.size() == 0)
+					ContentType = this->GetResponseHeaders("Content-Type", true);
+				if (ContentType.size() > 0)
 				{
-					for (size_t i = 0; i < ContentType->second.size(); i++)
+					for (size_t i = 0; i < ContentType.size(); i++)
 					{
-						const std::string& line = pystring::upper(ContentType->second[i]);
+						const std::string& line = pystring::upper(ContentType[i]);
 						if (line.find("UTF-8") != std::string::npos || line.find("UTF8") != std::string::npos)
 						{
 							bIsUtf8 = true;
@@ -209,16 +213,17 @@ bool HttpFileDownload::Do()
 
 			//获取文件名
 			std::string fileName;
-			for (size_t i = 0; i < ContentDisposition->second.size(); i++)
+			for (size_t i = 0; i < ContentDisposition.size(); i++)
 			{
-				const std::string& line = ContentDisposition->second[i];
-				size_t idx = line.find("filename=");
+				const std::string& line = ContentDisposition[i];
+				std::string lineLower = pystring::lower(line);
+				size_t idx = lineLower.find("filename=");
 				if (idx != std::string::npos)
 				{
 					fileName = pystring::strip(line.substr(idx + 9), "\"");
 					break;
 				}
-				else if ((idx = line.find("filename*=")) != std::string::npos)
+				else if ((idx = lineLower.find("filename*=")) != std::string::npos)
 				{
 					fileName = pystring::strip(line.substr(idx + 10), "\"");
 					idx = fileName.find("''");
@@ -235,9 +240,9 @@ bool HttpFileDownload::Do()
 			{
 				if (bIsUtf8)
 					fileName = GL::Utf82Ansi(fileName.c_str());
-				std::string targetFileName = pystring::os::path::dirname(saveFileName);
+				std::string targetFileName = os_path::dirname(saveFileName);
 				if (!targetFileName.empty())
-					targetFileName = pystring::os::path::join(targetFileName, fileName);
+					targetFileName = os_path::join(targetFileName, fileName);
 				else
 					targetFileName = fileName;
 				//执行重命名

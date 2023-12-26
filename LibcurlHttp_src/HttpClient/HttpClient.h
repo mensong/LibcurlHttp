@@ -79,6 +79,7 @@ public:
 	virtual int GetHttpCode() const { return m_httpCode; }
 	virtual const std::string& GetBody() { return m_body; }
 	virtual const ResponseHeaderFields& GetResponseHeaders() { return m_responseHeaders; };
+	virtual const std::vector<std::string>& GetResponseHeaders(const std::string& key, bool ignoreCase = false);
 
 protected:
 	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte);

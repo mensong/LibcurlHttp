@@ -4,6 +4,7 @@
 ///////////////////////////////////////////////////////////
 #include <openssl/err.h>
 #include <openssl/crypto.h>
+#include <pystring.h>
 
 std::vector<std::mutex> SslCurlWrapper::vectorOfSslMutex(CRYPTO_num_locks());
 
@@ -346,6 +347,33 @@ bool HttpClient::Do()
 		curl_easy_cleanup(curl);
 
 	return res;
+}
+
+const std::vector<std::string>& HttpClient::GetResponseHeaders(const std::string& key, bool ignoreCase)
+{
+	ResponseHeaderFields::iterator itFinder;
+	if (!ignoreCase)
+	{
+		itFinder = m_responseHeaders.find(key);
+	}
+	else
+	{
+		for (itFinder = m_responseHeaders.begin(); itFinder != m_responseHeaders.end(); ++itFinder)
+		{
+			if (pystring::equal(itFinder->first, key, true))
+			{
+				break;
+			}
+		}
+	}
+
+	if (itFinder == m_responseHeaders.end())
+	{
+		static std::vector<std::string> emptyVct;
+		return emptyVct;
+	}
+
+	return itFinder->second;
 }
 
 bool HttpClient::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)

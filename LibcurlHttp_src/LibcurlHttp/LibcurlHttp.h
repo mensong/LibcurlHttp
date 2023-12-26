@@ -274,8 +274,8 @@ public:
 	//»ñµÃResponse headers
 	virtual int getResponseHeaderKeysCount() = 0;
 	virtual const char* getResponseHeaderKey(int i) = 0;
-	virtual int getResponseHeadersCount(const char* key) = 0;
-	virtual const char* getResponseHeader(const char* key, int i) = 0;
+	virtual int getResponseHeadersCount(const char* key, bool ignoreCase = false) = 0;
+	virtual const char* getResponseHeader(const char* key, int i, bool ignoreCase = false) = 0;
 
 	//url×ªÂë
 	virtual const char* UrlGB2312Encode(const char * strIn) = 0;
@@ -324,8 +324,8 @@ LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len);
 LIBCURLHTTP_API int getCode(LibcurlHttp* http);
 LIBCURLHTTP_API int getResponseHeaderKeysCount(LibcurlHttp* http);
 LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i);
-LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key);
-LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key, int i);
+LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key, bool ignoreCase);
+LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key, int i, bool ignoreCase);
 
 LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn);
 LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strIn);
