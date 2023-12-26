@@ -4,6 +4,7 @@
 #else
 #include <stdlib.h>
 #endif
+#include <clocale>
 
 namespace GL
 {

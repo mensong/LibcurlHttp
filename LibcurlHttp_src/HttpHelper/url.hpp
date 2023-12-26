@@ -82,7 +82,7 @@ public:
     Url &port(const std::string& str);
 
     // Set port given as a 16bit unsigned integer
-    Url &port(std::uint16_t num) {return port(std::to_string((_Longlong)num));}
+    Url &port(std::uint16_t num) {return port(std::to_string((long long)num));}
 
     // Get path
     const std::string& path() const {lazy_parse(); return m_path;}
