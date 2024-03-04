@@ -267,6 +267,10 @@ public:
 	// downloadedFileName - 实际保存到的文件路径，char outFileName[MAX_PATH]; download("https://123", NULL, outFileName);
 	virtual int download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) = 0;
 	
+	//put
+	virtual int putData(const char* url, const unsigned char* data, size_t dataLen) = 0;
+	virtual int putFile(const char* url, const char* filePath) = 0;
+	
 	//获得提交后的body内容
 	virtual const char* getBody(int& len) = 0;
 	//获得提交后的返回code
@@ -319,6 +323,9 @@ LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* loc
 LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCountFormData);
 LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...);
 LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
+
+LIBCURLHTTP_API int putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen);
+LIBCURLHTTP_API int putFile(LibcurlHttp* http, const char* url, const char* filePath);
 
 LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len);
 LIBCURLHTTP_API int getCode(LibcurlHttp* http);
@@ -470,25 +477,16 @@ public:
 
 	static HTTP_CLIENT& Ins()
 	{
-		if (!s_ins)
-			s_ins = new HTTP_CLIENT;
-		return *s_ins;
-	}
-
-	static void Rel()
-	{
-		if (s_ins)
-		{
-			delete s_ins;
-			s_ins = NULL;
-		}
+		static HTTP_CLIENT s_ins;
+		return s_ins;
 	}
 
 	static HMODULE LoadLibraryFromCurrentDir(const char* dllName)
 	{
 		char selfPath[MAX_PATH];
 		MEMORY_BASIC_INFORMATION mbi;
-		HMODULE hModule = ((::VirtualQuery(LoadLibraryFromCurrentDir, &mbi, sizeof(mbi)) != 0) ? (HMODULE)mbi.AllocationBase : NULL);
+		HMODULE hModule = ((::VirtualQuery(LoadLibraryFromCurrentDir, &mbi, sizeof(mbi)) != 0) ? 
+			(HMODULE)mbi.AllocationBase : NULL);
 		::GetModuleFileNameA(hModule, selfPath, MAX_PATH);
 		std::string moduleDir(selfPath);
 		size_t idx = moduleDir.find_last_of('\\');
@@ -510,9 +508,4 @@ public:
 	}
 
 	HMODULE hDll;
-	static HTTP_CLIENT* s_ins;
 };
-
-#ifndef LIBCURLHTTP_EXPORTS
-__declspec(selectany) HTTP_CLIENT* HTTP_CLIENT::s_ins = NULL;
-#endif

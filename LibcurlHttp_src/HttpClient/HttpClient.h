@@ -73,6 +73,15 @@ public:
 	virtual void AddMultipartField(const MultipartField& field) { m_multipartFields.push_back(field); m_isInnerPost = true; }
 	virtual const std::vector<MultipartField>& GetMultipartFields() { return m_multipartFields; }
 
+	//put 
+	virtual void ResetPutData() { m_putData.clear(); }
+	virtual void SetPutData(const std::vector<unsigned char>& data) { m_putData = data; }
+	virtual const std::vector<unsigned char>& GetPutData() { return m_putData; }
+	virtual void ResetPutFile() { m_putFile.clear(); }
+	virtual void SetPutFile(const std::string& filePath) { m_putFile = filePath; }
+	virtual const std::string& GetPutFile() { return m_putFile; }
+
+	//开始处理
 	virtual bool Do();
 
 	virtual CURLcode GetCode() const { return m_retCode; }
@@ -90,6 +99,32 @@ protected:
 	static size_t _WriteDataCallback(void* pBuffer, size_t nSize, size_t nMemByte, void* pParam);
 	static int _ProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
 	static size_t _HeaderCallback(void *data, size_t size, size_t nmemb, void *userdata);
+
+protected:
+	typedef struct put_upload_ctx
+	{
+		unsigned char* start;
+		unsigned char* pos;
+		unsigned char* end;
+
+		put_upload_ctx(std::vector<unsigned char>& data)
+		{
+			if (data.size() == 0)
+			{
+				this->start = NULL;
+				this->pos = NULL;
+				this->end = NULL;
+				return;
+			}
+
+			this->start = &data[0];
+			this->pos = this->start;
+			this->end = this->start + data.size();
+		}
+	} put_upload_ctx;
+	static size_t _put_read_data_callback(void* ptr, size_t size, size_t nmemb, void* stream);
+
+	static size_t _put_read_file_callback(char* ptr, size_t size, size_t nmemb, void* userdata);
 
 public:
 	// trim from start
@@ -130,6 +165,10 @@ protected:
 	std::vector<FormField> m_formFields;
 	std::string m_postData;
 	std::vector<MultipartField> m_multipartFields;
+
+	//put m_putData与m_putFile二选一
+	std::vector<unsigned char> m_putData;
+	std::string m_putFile;
 
 	CURLcode m_retCode;
 	/* 非正常的htto code解释

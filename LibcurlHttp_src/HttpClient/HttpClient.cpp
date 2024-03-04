@@ -99,6 +99,8 @@ bool HttpClient::Do()
 	struct curl_httppost* post = NULL;
 	curl_mime *mime = NULL;
 	curl_slist* headerList = NULL;
+	put_upload_ctx* upload_ctx = NULL;
+	FILE* putFile = NULL;
 
 	do 
 	{
@@ -291,6 +293,40 @@ bool HttpClient::Do()
 				break;//return
 			}
 		}
+		else if (m_putData.size() > 0 || m_putFile.size() > 0)
+		{
+			sMethod = GetCustomMothod("PUT");
+			curl_easy_setopt(curl, CURLOPT_UPLOAD	, 1L);
+
+			if (m_putData.size() > 0)
+			{
+				curl_easy_setopt(curl, CURLOPT_READFUNCTION, _put_read_data_callback);
+				upload_ctx = new put_upload_ctx(m_putData);
+				curl_easy_setopt(curl, CURLOPT_READDATA, upload_ctx);
+				curl_off_t size = (curl_off_t)(upload_ctx->end - upload_ctx->start);
+				if (size <= 2 * 1024 * 1024 * 1024)
+					curl_easy_setopt(curl, CURLOPT_INFILESIZE, (LONG)size);
+				else
+					curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, size);
+			}
+			else if (m_putFile.size() > 0)
+			{
+				curl_easy_setopt(curl, CURLOPT_READFUNCTION, _put_read_file_callback);
+				putFile = fopen(m_putFile.c_str(), "r");
+				if (!putFile)
+				{
+					m_httpCode = CURLE_FILE_COULDNT_READ_FILE;
+					break;//return
+				}
+				curl_off_t fsize = 0; /* set this to the size of the input file */
+				/* we want to use our own read function */
+				curl_easy_setopt(curl, CURLOPT_READFUNCTION, _put_read_file_callback);
+				/* now specify which pointer to pass to our callback */
+				curl_easy_setopt(curl, CURLOPT_READDATA, putFile);
+				/* Set the size of the file to upload */
+				curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)fsize);
+			}
+		}
 		else
 		{
 			if (m_isInnerPost)
@@ -337,6 +373,10 @@ bool HttpClient::Do()
 	} while (0);
 
 	//ÉÆºó
+	if (upload_ctx)
+		delete upload_ctx;
+	if (putFile)
+		fclose(putFile);
 	if (post)
 		curl_formfree(post);
 	if (mime)
@@ -434,4 +474,39 @@ size_t HttpClient::_HeaderCallback(void *data, size_t size, size_t nmemb, void *
 	}
 
 	return (size * nmemb);
+}
+
+size_t HttpClient::_put_read_file_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+	FILE* src = (FILE*)userdata;
+	/* copy as much data as possible into the 'ptr' buffer, but no more than
+	   'size' * 'nmemb' bytes */
+	size_t retcode = fread(ptr, size, nmemb, src);
+	return retcode;
+}
+
+size_t HttpClient::_put_read_data_callback(void* ptr, size_t size, size_t nmemb, void* stream)
+{
+	put_upload_ctx* ctx = (put_upload_ctx*)stream;
+	size_t len = 0;
+
+	if (ctx->pos >= ctx->end) {
+		return 0;
+	}
+
+	if ((size == 0) || (nmemb == 0) || ((size * nmemb) < 1)) {
+		return 0;
+	}
+
+	len = ctx->end - ctx->pos;
+	if (len > size * nmemb) {
+		len = size * nmemb;
+	}
+
+	memcpy(ptr, ctx->pos, len);
+	ctx->pos += len;
+
+	//printf("send len=%zu\n", len);
+
+	return len;
 }

@@ -392,6 +392,72 @@ public:
 		return m_responseCode;
 	}
 	
+	virtual int putData(const char* url, const unsigned char* data, size_t dataLen) override
+	{
+		HttpClientFC httpClient;
+
+	
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
+		httpClient.SetUrl(sUrl.c_str());
+		httpClient.SetTimtout(m_timeout);
+		httpClient.SetUserAgent(m_userAgent);
+		httpClient.SetHeaders(m_requestHeaders);
+		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetProgress(m_progressCallback, m_progressUserData);
+		httpClient.SetAutoRedirect(m_autoRedirect);
+		httpClient.SetMaxRedirect(m_maxRedirect);
+
+		if (dataLen == 0)
+		{//防止post空内容时出现411错误
+			httpClient.SetHeader("Content-Length", "0");
+		}
+		else
+		{
+			std::vector<unsigned char> _data(dataLen, (const unsigned char)0);
+			memcpy(&_data[0], data, dataLen);
+			httpClient.SetPutData(_data);
+		}
+
+		httpClient.Do();
+
+		m_responseCode = httpClient.GetHttpCode();
+		m_responseBody = httpClient.GetBody();
+		m_responseHeaders = httpClient.GetResponseHeaders();
+
+		m_customMothod = "";
+		return m_responseCode;
+	}
+
+	virtual int putFile(const char* url, const char* filePath) override
+	{
+		if (!filePath)
+		{
+			return CURLE_BAD_FUNCTION_ARGUMENT;
+		}
+
+		HttpClientFC httpClient;
+
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
+		httpClient.SetUrl(sUrl.c_str());
+		httpClient.SetTimtout(m_timeout);
+		httpClient.SetUserAgent(m_userAgent);
+		httpClient.SetHeaders(m_requestHeaders);
+		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetProgress(m_progressCallback, m_progressUserData);
+		httpClient.SetAutoRedirect(m_autoRedirect);
+		httpClient.SetMaxRedirect(m_maxRedirect);
+		httpClient.SetPutFile(filePath);
+
+		httpClient.Do();
+
+		m_responseCode = httpClient.GetHttpCode();
+		m_responseBody = httpClient.GetBody();
+		m_responseHeaders = httpClient.GetResponseHeaders();
+
+		m_customMothod = "";
+		return m_responseCode;
+	}
+
 	virtual const char* getBody(int& len) override
 	{
 		const std::string& sBody = m_responseBody;
@@ -710,6 +776,16 @@ LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...)
 LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData)
 {
 	return http->postMultipart(url, multipartDataArr, nCountMultipartData);
+}
+
+LIBCURLHTTP_API int putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen)
+{
+	return http->putData(url, data, dataLen);
+}
+
+LIBCURLHTTP_API int putFile(LibcurlHttp* http, const char* url, const char* filePath)
+{
+	return http->putFile(url, filePath);
 }
 
 LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len)
