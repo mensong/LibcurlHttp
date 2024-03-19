@@ -413,9 +413,7 @@ public:
 		}
 		else
 		{
-			std::vector<unsigned char> _data(dataLen, (const unsigned char)0);
-			memcpy(&_data[0], data, dataLen);
-			httpClient.SetPutData(_data);
+			httpClient.SetPutData(data, dataLen);
 		}
 
 		httpClient.Do();

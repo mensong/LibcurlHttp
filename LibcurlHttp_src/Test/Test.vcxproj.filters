@@ -30,6 +30,9 @@
     <ClInclude Include="..\pystring\pystring.h">
       <Filter>pystring</Filter>
     </ClInclude>
+    <ClInclude Include="Md5.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -40,6 +43,9 @@
     </ClCompile>
     <ClCompile Include="..\pystring\pystring.cpp">
       <Filter>pystring</Filter>
+    </ClCompile>
+    <ClCompile Include="Md5.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

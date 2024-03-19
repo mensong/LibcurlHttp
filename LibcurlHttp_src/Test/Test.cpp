@@ -6,6 +6,7 @@
 #include "LibcurlHttp.h"
 #include <string>
 #include <iostream>
+#include "Md5.h"
 #include "..\pystring\pystring.h"
 
 
@@ -116,9 +117,9 @@ int main(int argc, char** argv)
 
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
-	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
-	char downloadedFileName[MAX_PATH];
-	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//", downloadedFileName);
+	//HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
+	//char downloadedFileName[MAX_PATH];
+	//HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//", downloadedFileName);
 	
 	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UID_", "1683766301063faec713a-1cbb-40ef-9baa-9886570eb00c1683766301063");
 	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UserName_", "liaomp2");
@@ -131,6 +132,46 @@ int main(int argc, char** argv)
 	//int len = 0;
 	//const char* body = http->getBody(len);
 	//std::string sBody = http->UTF8ToAnsi(body);
+
+	std::string url(1024, 0);
+	std::cout << "输入url:";
+	std::cin.getline(&url[0], 1024);
+
+	std::string cookies(1024, 0);
+	std::cout << "输入cookies:";
+	std::cin.getline(&cookies[0], 1024);
+
+	std::string data(10240, 0);
+	std::cout << "输入提交内容:";
+	std::cin.getline(&data[0], 10240);
+
+	http->setRequestHeader("Accept", "application/json, text/plain, */*");
+	http->setRequestHeader("Accept-Encoding", "gzip, deflate");
+	http->setRequestHeader("Connection", "keep-alive");
+	http->setRequestHeader("Content-Type", "application/x-www-form-urlencoded");	
+	http->setRequestHeader("Cookie", cookies.c_str());
+	http->setRequestHeader("User-Agent", "MDI");
+		
+	SYSTEMTIME st;
+	::GetLocalTime(&st);
+	std::string Platform_Auth = md5(
+		std::to_string(st.wYear) + "-" +
+		std::to_string(st.wMonth) + "-" +
+		std::to_string(st.wDay));
+	http->setRequestHeader("Platform_Auth", Platform_Auth.c_str());
+	//不自动重定向，以获得当cookies过期时的错误信息
+	http->setAutoRedirect(false);
+
+	int httpCode = http->post(url.c_str(),
+		data.c_str(), data.size(), "application/x-www-form-urlencoded");
+
+
+	int len = 0;
+	const char* body = http->getBody(len);
+	std::string sBody = http->UTF8ToAnsi(body);
+
+	std::cout << "http code=" << httpCode << std::endl;
+	std::cout << "body=" << sBody << std::endl;
 
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 

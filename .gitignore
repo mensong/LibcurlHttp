@@ -18,3 +18,5 @@
 /LibcurlHttp_src/*.opendb
 /LibcurlHttp_src/*.opensdf
 /LibcurlHttp_src/*.sdf
+/LibcurlHttp_src/CurlUI/x64
+/LibcurlHttp_src/CurlUI/*.aps

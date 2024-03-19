@@ -74,9 +74,15 @@ public:
 	virtual const std::vector<MultipartField>& GetMultipartFields() { return m_multipartFields; }
 
 	//put 
-	virtual void ResetPutData() { m_putData.clear(); }
-	virtual void SetPutData(const std::vector<unsigned char>& data) { m_putData = data; }
-	virtual const std::vector<unsigned char>& GetPutData() { return m_putData; }
+	virtual void ResetPutData() { m_putData = NULL; m_putDataLen = 0; }
+	virtual void SetPutData(const unsigned char* data, size_t dataLen) {
+		m_putData = const_cast<unsigned char*>(data); 
+		m_putDataLen = dataLen;
+	}
+	virtual const unsigned char* GetPutData(size_t& outDataLen) { 
+		outDataLen = m_putDataLen; return m_putData;
+	}
+
 	virtual void ResetPutFile() { m_putFile.clear(); }
 	virtual void SetPutFile(const std::string& filePath) { m_putFile = filePath; }
 	virtual const std::string& GetPutFile() { return m_putFile; }
@@ -107,9 +113,9 @@ protected:
 		unsigned char* pos;
 		unsigned char* end;
 
-		put_upload_ctx(std::vector<unsigned char>& data)
+		put_upload_ctx(unsigned char* data, size_t dataLen)
 		{
-			if (data.size() == 0)
+			if (!data)
 			{
 				this->start = NULL;
 				this->pos = NULL;
@@ -117,9 +123,9 @@ protected:
 				return;
 			}
 
-			this->start = &data[0];
+			this->start = data;
 			this->pos = this->start;
-			this->end = this->start + data.size();
+			this->end = this->start + dataLen;
 		}
 	} put_upload_ctx;
 	static size_t _put_read_data_callback(void* ptr, size_t size, size_t nmemb, void* stream);
@@ -167,7 +173,8 @@ protected:
 	std::vector<MultipartField> m_multipartFields;
 
 	//put m_putData与m_putFile二选一
-	std::vector<unsigned char> m_putData;
+	unsigned char* m_putData;
+	size_t m_putDataLen;
 	std::string m_putFile;
 
 	CURLcode m_retCode;

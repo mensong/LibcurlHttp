@@ -264,7 +264,7 @@ public:
 		
 	//下载网络文件到本地
 	// localFileName - 想要保存到的文件路径或目录，如果是目录则会在此目录下根据Content-Disposition的描述自动获取文件名或生成一个临时文件名
-	// downloadedFileName - 实际保存到的文件路径，char outFileName[MAX_PATH]; download("https://123", NULL, outFileName);
+	// downloadedFileName - 实际保存到的文件路径，char outFileName[MAX_PATH]; download("https://123.com", NULL, outFileName);
 	virtual int download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) = 0;
 	
 	//put

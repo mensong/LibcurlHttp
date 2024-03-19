@@ -43,6 +43,8 @@ HttpClient::HttpClient()
 	, m_autoRedirect(true)
 	, m_maxRedirect(5)
 	, m_isInnerPost(false)
+	, m_putData(NULL)
+	, m_putDataLen(0)
 {
 	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
 }
@@ -293,17 +295,17 @@ bool HttpClient::Do()
 				break;//return
 			}
 		}
-		else if (m_putData.size() > 0 || m_putFile.size() > 0)
+		else if (m_putData || m_putFile.size() > 0)
 		{
 			sMethod = GetCustomMothod("PUT");
 			curl_easy_setopt(curl, CURLOPT_UPLOAD	, 1L);
 
-			if (m_putData.size() > 0)
+			if (m_putData)
 			{
 				curl_easy_setopt(curl, CURLOPT_READFUNCTION, _put_read_data_callback);
-				upload_ctx = new put_upload_ctx(m_putData);
+				upload_ctx = new put_upload_ctx(m_putData, m_putDataLen);
 				curl_easy_setopt(curl, CURLOPT_READDATA, upload_ctx);
-				curl_off_t size = (curl_off_t)(upload_ctx->end - upload_ctx->start);
+				curl_off_t size = (curl_off_t)(m_putDataLen);
 				if (size <= 2 * 1024 * 1024 * 1024)
 					curl_easy_setopt(curl, CURLOPT_INFILESIZE, (LONG)size);
 				else
