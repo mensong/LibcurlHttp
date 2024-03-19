@@ -47,6 +47,9 @@ public:
 	virtual void SetAutoRedirect(bool autoRedirect) { m_autoRedirect = autoRedirect; }
 	virtual bool GetAutoRedirect() { return m_autoRedirect; }
 
+	virtual void SetDecompressIfGzip(bool decompressIfGzip) { m_decompressIfGzip = decompressIfGzip; }
+	virtual bool GetDecompressIfGzip() { return m_decompressIfGzip; }
+
 	virtual void SetMaxRedirect(int maxRedirect) { m_maxRedirect = maxRedirect; }
 	virtual int GetMaxRedirect() { return m_maxRedirect; }
 
@@ -94,7 +97,7 @@ public:
 	virtual int GetHttpCode() const { return m_httpCode; }
 	virtual const std::string& GetBody() { return m_body; }
 	virtual const ResponseHeaderFields& GetResponseHeaders() { return m_responseHeaders; };
-	virtual const std::vector<std::string>& GetResponseHeaders(const std::string& key, bool ignoreCase = false);
+	virtual const std::vector<std::string>& GetResponseHeaders(const std::string& key, bool ignoreCase = true);
 
 protected:
 	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte);
@@ -152,6 +155,9 @@ public:
 		return ltrim(rtrim(s));
 	}
 
+	static bool gzDecompress(const unsigned char* src, size_t srcLen, const unsigned char* dst, size_t dstLen, size_t* outLen);
+	static bool tryDecompressGzip(const char* src, size_t srcLen, std::string& outData);
+
 protected:
 	int m_timeout;
 	std::string m_customMethod;
@@ -160,6 +166,7 @@ protected:
 	std::string m_userAgent;
 	bool m_autoRedirect;
 	int m_maxRedirect;
+	bool m_decompressIfGzip;
 
 	std::map<std::string, std::string> m_headers;
 

@@ -6,6 +6,10 @@
 #include <openssl/crypto.h>
 #include <pystring.h>
 
+#include <zconf.h>
+#include <zlib.h>
+#include <zutil.h>
+
 std::vector<std::mutex> SslCurlWrapper::vectorOfSslMutex(CRYPTO_num_locks());
 
 unsigned long SslCurlWrapper::id_function()
@@ -45,6 +49,7 @@ HttpClient::HttpClient()
 	, m_isInnerPost(false)
 	, m_putData(NULL)
 	, m_putDataLen(0)
+	, m_decompressIfGzip(true)
 {
 	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
 }
@@ -350,7 +355,7 @@ bool HttpClient::Do()
 
 		/** 开始执行请求 */
 		m_retCode = curl_easy_perform(curl);
-
+				
 		if (m_retCode != CURLE_OK)
 		{
 			m_httpCode = m_retCode;
@@ -361,6 +366,30 @@ bool HttpClient::Do()
 		}
 		else
 		{
+			//处理GZIP
+			bool isGzip = false;
+			if (m_decompressIfGzip && m_body.size() > 0)
+			{
+				std::vector<std::string> ContentEncoding = GetResponseHeaders("Content-Encoding", true);
+				for (size_t i = 0; i < ContentEncoding.size(); i++)
+				{
+					std::string v = pystring::lower(ContentEncoding[i]);
+					if (v.find("gzip") != std::string::npos)
+					{
+						isGzip = true;
+						break;
+					}
+				}
+				if (isGzip)
+				{
+					std::string writeData;
+					if (tryDecompressGzip((const char*)&m_body[0], m_body.size(), writeData))
+					{
+						m_body = writeData;
+					}
+				}
+			}
+
 			int64_t http_code = 0;
 			CURLcode code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 			if (code == CURLcode::CURLE_OK)
@@ -420,7 +449,8 @@ const std::vector<std::string>& HttpClient::GetResponseHeaders(const std::string
 
 bool HttpClient::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
 {
-	m_body.append(reinterpret_cast<char*>(pBuffer), nSize*nMemByte);
+	size_t totalSize = nSize * nMemByte;
+	m_body.append(reinterpret_cast<char*>(pBuffer), totalSize);
 	return true;
 }
 
@@ -485,6 +515,63 @@ size_t HttpClient::_put_read_file_callback(char* ptr, size_t size, size_t nmemb,
 	   'size' * 'nmemb' bytes */
 	size_t retcode = fread(ptr, size, nmemb, src);
 	return retcode;
+}
+
+bool HttpClient::gzDecompress(const unsigned char* src, size_t srcLen, const unsigned char* dst, size_t dstLen, size_t* outLen)
+{
+	z_stream strm;
+	strm.zalloc = NULL;
+	strm.zfree = NULL;
+	strm.opaque = NULL;
+
+	strm.avail_in = srcLen;
+	strm.avail_out = dstLen;
+	strm.next_in = (Bytef*)src;
+	strm.next_out = (Bytef*)dst;
+
+	int err = -1;
+	*outLen = 0;
+	err = inflateInit2(&strm, MAX_WBITS + 16); /*zlib解压gz数据*/
+	if (err == Z_OK)
+	{
+		err = inflate(&strm, Z_FINISH);
+		if (err == Z_STREAM_END)
+		{
+			*outLen = strm.total_out; /* 解压成功 */
+		}
+	}
+
+	inflateEnd(&strm);
+	return err == Z_STREAM_END;
+}
+
+bool HttpClient::tryDecompressGzip(const char* src, size_t srcLen, std::string& outData)
+{
+	bool success = false;
+
+	for (int i = 1; i <= 3; i++)
+	{
+		size_t buffSize = (srcLen * 10 + 3000) * i; /* 解压缓冲区大小，自动扩容 */
+		size_t decompressedSize = 0;
+		char* buffData = (char*)malloc(buffSize);
+		memset(buffData, 0, buffSize);
+		bool ret = gzDecompress(
+			(const unsigned char*)src, srcLen,
+			(const unsigned char*)buffData, buffSize, &decompressedSize);
+		if (ret)
+		{ /* 解压成功 */
+			outData = buffData;
+			free(buffData);
+			success = true;
+			break;
+		}
+		else
+		{
+			free(buffData); /* 解压失败，扩容后再次尝试 */
+		}
+	}
+
+	return success;
 }
 
 size_t HttpClient::_put_read_data_callback(void* ptr, size_t size, size_t nmemb, void* stream)

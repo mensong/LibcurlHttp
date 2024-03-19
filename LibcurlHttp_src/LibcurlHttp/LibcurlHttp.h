@@ -1,5 +1,9 @@
 #pragma once
+#ifndef _AFX
+#include <windows.h>
+#endif
 #include <string>
+#include <stdint.h>
 
 #ifdef LIBCURLHTTP_EXPORTS
 #define LIBCURLHTTP_API extern "C" __declspec(dllexport)
@@ -235,6 +239,9 @@ public:
 	//设置自动重定向次数
 	virtual void setMaxRedirect(int maxRedirect) = 0;
 
+	//设置当response body的格式为GZIP时，是否解压。默认开启
+	virtual void setDecompressIfGzip(bool decompressIfGzip) = 0;
+
 	//http get
 	virtual int get(const char* url) = 0;
 	//http get
@@ -314,6 +321,7 @@ LIBCURLHTTP_API void setCustomMothod(LibcurlHttp* http, const char* mothod);
 LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect);
 LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect);
+LIBCURLHTTP_API void setDecompressIfGzip(LibcurlHttp* http, bool decompressIfGzip);
 
 LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url);
 LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...);
@@ -362,6 +370,7 @@ public:
 	typedef void(*FN_setProgress)(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 	typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
 	typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
+	typedef void(*FN_setDecompressIfGzip)(LibcurlHttp* http, bool decompressIfGzip);
 	typedef int(*FN_get)(LibcurlHttp* http, const char* url);
 	typedef int(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
 	typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
@@ -404,7 +413,8 @@ public:
 		DEF_PROC(hDll, setCustomMothod);
 		DEF_PROC(hDll, setProgress);
 		DEF_PROC(hDll, setAutoRedirect);
-		DEF_PROC(hDll, setMaxRedirect);
+		DEF_PROC(hDll, setMaxRedirect); 
+		DEF_PROC(hDll, setDecompressIfGzip);
 		DEF_PROC(hDll, get);
 		DEF_PROC(hDll, get_a);
 		DEF_PROC(hDll, post);
@@ -440,6 +450,7 @@ public:
 	FN_setProgress			setProgress;
 	FN_setAutoRedirect		setAutoRedirect;
 	FN_setMaxRedirect		setMaxRedirect;
+	FN_setDecompressIfGzip	setDecompressIfGzip;
 	FN_get					get;
 	FN_get_a				get_a;
 	FN_post					post;
@@ -502,7 +513,8 @@ public:
 			DWORD err = ::GetLastError();
 			char buf[10];
 			sprintf_s(buf, "%u", err);
-			::MessageBoxA(NULL, ("找不到" + modulePath + "模块:" + buf).c_str(), "找不到模块", MB_OK | MB_ICONERROR);
+			::MessageBoxA(NULL, ("找不到" + modulePath + "模块:" + buf).c_str(),
+				"找不到模块", MB_OK | MB_ICONERROR);
 		}
 		return hDll;
 	}

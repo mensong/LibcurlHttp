@@ -20,6 +20,7 @@ public:
 		, m_progressUserData(NULL)
 		, m_autoRedirect(true)
 		, m_maxRedirect(5)
+		, m_decompressIfGzip(true)
 	{
 		ms_urlEncodeEscape.insert('/');
 		ms_urlEncodeEscape.insert(':');
@@ -53,6 +54,11 @@ public:
 	{
 		m_maxRedirect = maxRedirect;
 	}
+
+	virtual void setDecompressIfGzip(bool decompressIfGzip) override
+	{
+		m_decompressIfGzip = decompressIfGzip;
+	}
 	
 	virtual int get(const char* url) override
 	{
@@ -68,6 +74,7 @@ public:
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
+		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
 				
 		httpClient.Do();
 
@@ -138,6 +145,7 @@ public:
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
+		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
 
 		std::string sData(content, contentLen);
 		httpClient.SetNormalPostData(sData);
@@ -214,6 +222,7 @@ public:
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
+		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
 		if (nCountFormData == 0)
 		{//防止post空内容时出现411错误
 			httpClient.SetHeader("Content-Length", "0");
@@ -325,6 +334,7 @@ public:
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
+		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
 		if (nCountMultipartData == 0)
 		{//防止post空内容时出现411错误
 			httpClient.SetHeader("Content-Length", "0");
@@ -406,6 +416,7 @@ public:
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
+		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
 
 		if (dataLen == 0)
 		{//防止post空内容时出现411错误
@@ -445,6 +456,7 @@ public:
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
 		httpClient.SetPutFile(filePath);
+		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
 
 		httpClient.Do();
 
@@ -655,6 +667,8 @@ private:
 	bool m_autoRedirect;
 	int m_maxRedirect;
 
+	bool m_decompressIfGzip;
+
 	int m_responseCode;
 	std::string m_responseBody;
 	ResponseHeaderFields m_responseHeaders;
@@ -713,6 +727,11 @@ LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect)
 LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect)
 {
 	http->setMaxRedirect(maxRedirect);
+}
+
+LIBCURLHTTP_API void setDecompressIfGzip(LibcurlHttp* http, bool decompressIfGzip)
+{
+	http->setDecompressIfGzip(decompressIfGzip);
 }
 
 LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url)
