@@ -56,6 +56,37 @@ BOOL CCurlUIDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
+	m_scale.SetAnchor(GetDlgItem(IDC_CMB_METHOD)->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinLeft |
+		CCtrlScale::AnchorRightToWinLeft |
+		CCtrlScale::AnchorTopToWinTop |
+		CCtrlScale::AnchorBottomToWinTop);
+	m_scale.SetAnchor(GetDlgItem(IDC_EDIT_URL)->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinLeft |
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorTopToWinTop |
+		CCtrlScale::AnchorBottomToWinTop);
+	m_scale.SetAnchor(GetDlgItem(IDC_BTN_RUN)->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinRight |
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorTopToWinTop |
+		CCtrlScale::AnchorBottomToWinTop);
+	m_scale.SetAnchor(GetDlgItem(IDC_TAB1)->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinLeft |
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorTopToWinTop);
+	m_scale.SetAnchor(GetDlgItem(IDC_EDIT_RESHEADER)->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinLeft |
+		CCtrlScale::AnchorBottomToWinBottom);
+	m_scale.SetAnchor(GetDlgItem(IDC_EDIT_RESBODY)->GetSafeHwnd(),
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorBottomToWinBottom);
+	m_scale.SetAnchor(GetDlgItem(IDC_PROG_PROGRESS)->GetSafeHwnd(),
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorTopToWinBottom |
+		CCtrlScale::AnchorBottomToWinBottom);
+	m_scale.Init(GetSafeHwnd());
+
 	// TODO: 在此添加额外的初始化代码
 	m_cmbMethod.AddString(_T("GET"));
 	m_cmbMethod.AddString(_T("POST"));
@@ -63,7 +94,7 @@ BOOL CCurlUIDlg::OnInitDialog()
 	m_cmbMethod.AddString(_T("DELETE"));
 	m_cmbMethod.AddString(_T("HEAD"));
 	m_cmbMethod.AddString(_T("OPTIONS"));
-
+			
 	//获取tab control位置和大小
 	CRect tabRect, itemRect;
 	int nX, nY, nXc, nYc;
@@ -82,6 +113,7 @@ BOOL CCurlUIDlg::OnInitDialog()
 	//设置对话框1的显示位置
 	dlg1->SetWindowPos(&wndTop, nX, nY, nXc, nYc, SWP_SHOWWINDOW);
 	dlg1->ShowWindow(SW_HIDE);
+	m_scale1.Init(dlg1->GetSafeHwnd());
 
 	//添加对话框2
 	m_tabParams.InsertItem(1, _T("Header"));
@@ -91,6 +123,7 @@ BOOL CCurlUIDlg::OnInitDialog()
 	//设置对话框1的显示位置
 	dlg2->SetWindowPos(&wndTop, nX, nY, nXc, nYc, SWP_SHOWWINDOW);
 	dlg2->ShowWindow(SW_HIDE);
+	m_scale2.Init(dlg2->GetSafeHwnd());
 
 	//添加对话框3
 	m_tabParams.InsertItem(2, _T("Body"));
@@ -100,8 +133,29 @@ BOOL CCurlUIDlg::OnInitDialog()
 	//设置对话框1的显示位置
 	dlg3->SetWindowPos(&wndTop, nX, nY, nXc, nYc, SWP_SHOWWINDOW);
 	dlg3->ShowWindow(SW_HIDE);
+	m_scale3.Init(dlg3->GetSafeHwnd());
 
 	m_vctPages[0]->ShowWindow(SW_SHOW);
+
+	m_scaleTab.SetAnchor(dlg1->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinLeft | 
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorTopToWinTop |
+		CCtrlScale::AnchorBottomToWinBottom
+	);
+	m_scaleTab.SetAnchor(dlg2->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinLeft |
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorTopToWinTop |
+		CCtrlScale::AnchorBottomToWinBottom
+	);
+	m_scaleTab.SetAnchor(dlg3->GetSafeHwnd(),
+		CCtrlScale::AnchorLeftToWinLeft |
+		CCtrlScale::AnchorRightToWinRight |
+		CCtrlScale::AnchorTopToWinTop |
+		CCtrlScale::AnchorBottomToWinBottom
+	);
+	m_scaleTab.Init(m_tabParams.GetSafeHwnd());
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }

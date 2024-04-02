@@ -5,6 +5,7 @@
 #pragma once
 #include "..\LibcurlHttp\LibcurlHttp.h"
 #include <vector>
+#include "CtrlScale.h"
 
 // CCurlUIDlg 对话框
 class CCurlUIDlg : public CDialogEx
@@ -39,6 +40,11 @@ public:
 	CEdit m_editResponseBody;
 	CEdit m_editResponseHeader;
 	CProgressCtrl m_progress;
+	CCtrlScale m_scale;
+	CCtrlScale m_scaleTab;
+	CCtrlScale m_scale1;
+	CCtrlScale m_scale2;
+	CCtrlScale m_scale3;
 
 	std::vector<CDialogEx*> m_vctPages;
 	CTabCtrl m_tabParams;

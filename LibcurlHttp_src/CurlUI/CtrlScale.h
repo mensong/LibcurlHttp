@@ -1,15 +1,18 @@
 #pragma once
+#include <Windows.h>
 #include <vector>
 #include <map>
+#include <set>
 
 typedef struct TAG_CTRLRECT
 {
 public:
-    int nId;//控件ID
     double dScale[4];//缩放值
+
+    std::map<DWORD/*AnchorType*/, LONG> offsetAnchor;
+
     TAG_CTRLRECT()
     {
-        nId = 0;//未定义
         dScale[0] = 0;
         dScale[1] = 0;
         dScale[2] = 0;
@@ -19,33 +22,53 @@ public:
     {
         *this = cr;
     }
-    bool operator () (const TAG_CTRLRECT& cr)
-    {
-        return (cr.nId == nId);
-    }
 } CTRLRECT;
 
 class CCtrlScale
 {
 public:
+    typedef enum AnchorType
+    {
+		ProportionalScale       = 0b0,       //按比例缩放(默认)
+
+        AnchorLeftToWinLeft     = 0b1,       //控件左相对于窗口左的距离不变
+        AnchorLeftToWinRight    = 0b10,      //控件左相对于窗口右的距离不变
+        AnchorRightToWinLeft    = 0b100,     //控件右相对于窗口左的距离不变
+        AnchorRightToWinRight   = 0b1000,    //控件右相对于窗口右的距离不变
+        AnchorTopToWinTop       = 0b10000,   //控件顶相对于窗口顶的距离不变
+        AnchorTopToWinBottom    = 0b100000,  //控件顶相对于窗口底的距离不变
+        AnchorBottomToWinTop    = 0b1000000, //控件底相对于窗口顶的距离不变
+        AnchorBottomToWinBottom = 0b10000000,//控件底相对于窗口底的距离不变
+    } AnchorType;
+
+    bool HasAnchorType(DWORD/*CCtrlScale::AnchorType*/ flags, CCtrlScale::AnchorType rectType);
+
+public:
     CCtrlScale(void);
-    CCtrlScale(CWnd* pParentWnd);
+    CCtrlScale(HWND pParentWnd);
     virtual ~CCtrlScale(void);
 
+    void SetAnchor(HWND ctrl, DWORD/*CCtrlScale::AnchorType*/ rectType);
+    void AddExclude(HWND ctrl);
+    void RemoveExclude(HWND ctrl);
 
-
-    BOOL Init(CWnd* pParentWnd);
+    BOOL Init(HWND pParentWnd);
     
+    void Reset();
+
 protected:
     static std::map<HWND, CCtrlScale*> ms_scaleManagers;
     void removeScaleManager();
 
-    WNDPROC m_oldWinProc;
+    WNDPROC m_originalWinProc;
     static LRESULT CALLBACK ParentWinProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
     void Scale(int cx, int cy);
 
 private:
-    CWnd* m_pParentWnd;
-    CRect m_rect;
-    std::vector<CTRLRECT> m_vecCtrl;//保存控件缩放信息
+    HWND m_pParentWnd;
+    RECT m_rectWin;
+
+    std::map<HWND, CTRLRECT> m_ctrlRect;//保存控件缩放信息
+    std::map<HWND, DWORD> m_ctrlAnchorType;
+    std::set<HWND> m_ctrlExclude;
 };
