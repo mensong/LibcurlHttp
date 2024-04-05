@@ -1,5 +1,6 @@
 #include "HttpClient.h"
 #include <process.h>
+#include <stdio.h>
 
 ///////////////////////////////////////////////////////////
 #include <openssl/err.h>
@@ -111,7 +112,6 @@ bool HttpClient::Do()
 
 	do 
 	{
-
 		//初始化curl，这个是必须的
 		curl = curl_easy_init();
 		//设置url
@@ -303,7 +303,7 @@ bool HttpClient::Do()
 		else if (m_putData || m_putFile.size() > 0)
 		{
 			sMethod = GetCustomMothod("PUT");
-			curl_easy_setopt(curl, CURLOPT_UPLOAD	, 1L);
+			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
 			if (m_putData)
 			{
@@ -318,14 +318,18 @@ bool HttpClient::Do()
 			}
 			else if (m_putFile.size() > 0)
 			{
-				curl_easy_setopt(curl, CURLOPT_READFUNCTION, _put_read_file_callback);
-				putFile = fopen(m_putFile.c_str(), "r");
+				putFile = fopen(m_putFile.c_str(), "rb");
 				if (!putFile)
 				{
 					m_httpCode = CURLE_FILE_COULDNT_READ_FILE;
 					break;//return
 				}
-				curl_off_t fsize = 0; /* set this to the size of the input file */
+
+				//获取文件大小
+				_fseeki64(putFile, 0, SEEK_END);
+				curl_off_t fsize = _ftelli64(putFile);
+				_fseeki64(putFile, 0, SEEK_SET);
+
 				/* we want to use our own read function */
 				curl_easy_setopt(curl, CURLOPT_READFUNCTION, _put_read_file_callback);
 				/* now specify which pointer to pass to our callback */
