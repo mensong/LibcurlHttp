@@ -10,13 +10,13 @@
 #include "DlgQueryParams.h"
 #include "DlgHeader.h"
 #include "DlgBodyMultipart.h"
+#include "DlgBody_x_www_form_urlencoded.h"
+#include "DlgBodyRaw.h"
+#include "DlgBodyFile.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-#include "DlgBody_x_www_form_urlencoded.h"
-#include "DlgBodyRaw.h"
-#include "DlgBodyFile.h"
 
 
 // CCurlUIDlg 对话框
