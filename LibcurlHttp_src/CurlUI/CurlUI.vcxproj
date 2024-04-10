@@ -183,29 +183,45 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DlgBodyFile.h" />
+    <ClInclude Include="DlgBodyRaw.h" />
+    <ClInclude Include="DlgBody_x_www_form_urlencoded.h" />
+    <ClInclude Include="ItemKeyTextValue.h" />
     <ClInclude Include="CtrlScale.h" />
-    <ClInclude Include="DlgBody.h" />
+    <ClInclude Include="DlgBodyMultipart.h" />
     <ClInclude Include="DlgQueryParams.h" />
     <ClInclude Include="CurlUI.h" />
     <ClInclude Include="CurlUIDlg.h" />
     <ClInclude Include="DlgHeader.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="ItemKeyValueExt.h" />
+    <ClInclude Include="ListCtrlCustom.h" />
+    <ClInclude Include="MyButton.h" />
+    <ClInclude Include="MyRadioButton.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DlgBodyFile.cpp" />
+    <ClCompile Include="DlgBodyRaw.cpp" />
+    <ClCompile Include="DlgBody_x_www_form_urlencoded.cpp" />
+    <ClCompile Include="ItemKeyTextValue.cpp" />
     <ClCompile Include="CtrlScale.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="DlgBody.cpp" />
+    <ClCompile Include="DlgBodyMultipart.cpp" />
     <ClCompile Include="DlgQueryParams.cpp" />
     <ClCompile Include="CurlUI.cpp" />
     <ClCompile Include="CurlUIDlg.cpp" />
     <ClCompile Include="DlgHeader.cpp" />
+    <ClCompile Include="ItemKeyValueExt.cpp" />
+    <ClCompile Include="ListCtrlCustom.cpp" />
+    <ClCompile Include="MyButton.cpp" />
+    <ClCompile Include="MyRadioButton.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

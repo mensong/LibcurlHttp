@@ -9,11 +9,14 @@
 #include "afxdialogex.h"
 #include "DlgQueryParams.h"
 #include "DlgHeader.h"
-#include "DlgBody.h"
+#include "DlgBodyMultipart.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+#include "DlgBody_x_www_form_urlencoded.h"
+#include "DlgBodyRaw.h"
+#include "DlgBodyFile.h"
 
 
 // CCurlUIDlg 对话框
@@ -24,6 +27,21 @@ CCurlUIDlg::CCurlUIDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CURLUI_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+}
+
+CCurlUIDlg::~CCurlUIDlg()
+{
+	for (size_t i = 0; i < m_pageScales.size(); i++)
+	{
+		delete m_pageScales[i];
+	}
+	m_pageScales.clear();
+
+	for (size_t i = 0; i < m_vctPages.size(); i++)
+	{
+		delete m_vctPages[i];
+	}
+	m_vctPages.clear();
 }
 
 void CCurlUIDlg::DoDataExchange(CDataExchange* pDX)
@@ -94,67 +112,15 @@ BOOL CCurlUIDlg::OnInitDialog()
 	m_cmbMethod.AddString(_T("DELETE"));
 	m_cmbMethod.AddString(_T("HEAD"));
 	m_cmbMethod.AddString(_T("OPTIONS"));
-			
-	//获取tab control位置和大小
-	CRect tabRect, itemRect;
-	int nX, nY, nXc, nYc;
-	m_tabParams.GetClientRect(&tabRect);
-	m_tabParams.GetItemRect(0, &itemRect);
-	nX = itemRect.left;
-	nY = itemRect.bottom + 1;
-	nXc = tabRect.right - itemRect.left - 2;
-	nYc = tabRect.bottom - nY - 2;
 
-	// 添加对话框1
-	m_tabParams.InsertItem(0, _T("Query参数"));
-	DlgQueryParams* dlg1 = new DlgQueryParams();
-	m_vctPages.push_back(dlg1);
-	dlg1->Create(DlgQueryParams::IDD, &m_tabParams);
-	//设置对话框1的显示位置
-	dlg1->SetWindowPos(&wndTop, nX, nY, nXc, nYc, SWP_SHOWWINDOW);
-	dlg1->ShowWindow(SW_HIDE);
-	m_scale1.Init(dlg1->GetSafeHwnd());
-
-	//添加对话框2
-	m_tabParams.InsertItem(1, _T("Header"));
-	DlgHeader* dlg2 = new DlgHeader();
-	m_vctPages.push_back(dlg2);
-	dlg2->Create(DlgHeader::IDD, &m_tabParams);
-	//设置对话框1的显示位置
-	dlg2->SetWindowPos(&wndTop, nX, nY, nXc, nYc, SWP_SHOWWINDOW);
-	dlg2->ShowWindow(SW_HIDE);
-	m_scale2.Init(dlg2->GetSafeHwnd());
-
-	//添加对话框3
-	m_tabParams.InsertItem(2, _T("Body"));
-	DlgBody* dlg3 = new DlgBody();
-	m_vctPages.push_back(dlg3);
-	dlg3->Create(DlgBody::IDD, &m_tabParams);
-	//设置对话框1的显示位置
-	dlg3->SetWindowPos(&wndTop, nX, nY, nXc, nYc, SWP_SHOWWINDOW);
-	dlg3->ShowWindow(SW_HIDE);
-	m_scale3.Init(dlg3->GetSafeHwnd());
+	addPage<DlgQueryParams>(_T("Query参数"));
+	addPage<DlgHeader>(_T("Header"));
+	addPage<CDlgBodyMultipart>(_T("*Body-Multipart"));
+	addPage<CDlgBody_x_www_form_urlencoded>(_T("*Body-x-www-form-encoded"));
+	addPage<CDlgBodyRaw>(_T("*Body-Raw"));
+	addPage<CDlgBodyFile>(_T("*Body-File"));
 
 	m_vctPages[0]->ShowWindow(SW_SHOW);
-
-	m_scaleTab.SetAnchor(dlg1->GetSafeHwnd(),
-		CCtrlScale::AnchorLeftToWinLeft | 
-		CCtrlScale::AnchorRightToWinRight |
-		CCtrlScale::AnchorTopToWinTop |
-		CCtrlScale::AnchorBottomToWinBottom
-	);
-	m_scaleTab.SetAnchor(dlg2->GetSafeHwnd(),
-		CCtrlScale::AnchorLeftToWinLeft |
-		CCtrlScale::AnchorRightToWinRight |
-		CCtrlScale::AnchorTopToWinTop |
-		CCtrlScale::AnchorBottomToWinBottom
-	);
-	m_scaleTab.SetAnchor(dlg3->GetSafeHwnd(),
-		CCtrlScale::AnchorLeftToWinLeft |
-		CCtrlScale::AnchorRightToWinRight |
-		CCtrlScale::AnchorTopToWinTop |
-		CCtrlScale::AnchorBottomToWinBottom
-	);
 	m_scaleTab.Init(m_tabParams.GetSafeHwnd());
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE

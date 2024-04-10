@@ -133,6 +133,7 @@ int main(int argc, char** argv)
 	//const char* body = http->getBody(len);
 	//std::string sBody = http->UTF8ToAnsi(body);
 
+#if 0
 	std::string url(1024, 0);
 	std::cout << "输入url:";
 	std::cin.getline(&url[0], 1024);
@@ -172,6 +173,83 @@ int main(int argc, char** argv)
 
 	std::cout << "http code=" << httpCode << std::endl;
 	std::cout << "body=" << sBody << std::endl;
+#endif
+
+	http->setRequestHeader("Accept", "application/json, text/plain, */*");
+	http->setRequestHeader("Accept-Encoding", "gzip, deflate, br");
+	http->setRequestHeader("Connection", "keep-alive");
+	http->setRequestHeader("Charset", "UTF-8");
+	
+	//封装Http ,生成签名信息
+	// 参数：timeStampData/当前时间戳
+	//      partnerID/接口信息中的“企业ID”
+	//      apiKeyData/MD5加密密钥
+	//      shaKeyData/SHA加密密钥
+	//      MD5/SHA 加密必须存在一个
+	std::string timeStamp = std::to_string(::GetTickCount() / 1000);// 新迪推荐时间戳生成方式
+	// "企业ID" + “密钥信息” + “时间戳” + MD5= 新迪要求的加密方式
+	std::string partnerID = "32910344011697662974";
+	std::string secretKey = "20248835195332751534102886996566";
+	std::string apiKey = md5(partnerID + secretKey + timeStamp);
+	http->setRequestHeader("apiKeyData", apiKey.c_str());
+	http->setRequestHeader("timeStampData", timeStamp.c_str());
+	http->setRequestHeader("partnerID", partnerID.c_str());
+
+#if 0
+
+	{
+		http->setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		std::string sData = "fileName=mysql-8.0.31-winx64.zip";
+		int httpCode = http->post(
+			"http://xdqlh_yunapi_dev.meicloud.com/nds_requests/common/GetPresignedUploadUrl", sData.c_str(), sData.size());
+		int len = 0;
+		const char* pBody = http->getBody(len);
+		std::wstring sBody = http->UTF8ToWidebyte(pBody);
+		std::wcout << sBody << std::endl;
+	}
+
+#elif 1
+
+	{
+		int httpCode = http->putFile(
+			"http://xdqlh_yunminio_dev.meicloud.com/openapi/enterprise/32910344011697662974/upload/202404031753294935/mysql-8.0.31-winx64.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=T66U9GFHUXQZ8YC65144%2F20240403%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240403T095329Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b51a2a5dec1ac701de15b7110874fca56ce514d4d981fddc734829c993106f3f",
+			"D:\\mysql-8.0.31-winx64.zip");
+		int len = 0;
+		const char* pBody = http->getBody(len);
+		std::wstring sBody = http->UTF8ToWidebyte(pBody);
+		std::wcout << sBody << std::endl;
+	}
+
+#elif 0
+
+	{
+		int httpCode = http->postForm_a("http://xdqlh_yunapi_dev.meicloud.com/nds_requests/common/InsertTask",
+			1, "inputNdsFile", "202404031717135830/123.prt",
+			1, "mainFile", "",//mensong.prt
+			1, "inputFiles", "",
+			1, "inputURL", "",
+			1, "taskDescription", "",
+			1, "returnURL", "",
+			NULL);
+		int len = 0;
+		const char* pBody = http->getBody(len);
+		std::wstring sBody = http->UTF8ToWidebyte(pBody);
+		std::wcout << sBody << std::endl;
+	}
+
+#elif 1
+
+	{
+		int httpCode = http->postForm_a("http://xdqlh_yunapi_dev.meicloud.com/nds_requests/common/QueryTask",
+			1, "taskID", "114",
+			NULL);
+		int len = 0;
+		const char* pBody = http->getBody(len);
+		std::wstring sBody = http->UTF8ToWidebyte(pBody);
+		std::wcout << sBody << std::endl;
+	}
+
+#endif
 
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 

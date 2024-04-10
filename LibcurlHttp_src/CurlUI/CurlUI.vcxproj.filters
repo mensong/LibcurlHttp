@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="CCustomListCtrl">
+      <UniqueIdentifier>{cba85b88-abcd-4057-b63d-c48ddb2c5a3b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CurlUI.h">
@@ -39,10 +42,34 @@
     <ClInclude Include="DlgHeader.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DlgBody.h">
+    <ClInclude Include="DlgBodyMultipart.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="CtrlScale.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ListCtrlCustom.h">
+      <Filter>CCustomListCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="MyButton.h">
+      <Filter>CCustomListCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="MyRadioButton.h">
+      <Filter>CCustomListCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemKeyTextValue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemKeyValueExt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgBody_x_www_form_urlencoded.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgBodyRaw.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgBodyFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -62,10 +89,34 @@
     <ClCompile Include="DlgHeader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="DlgBody.cpp">
+    <ClCompile Include="DlgBodyMultipart.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CtrlScale.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ListCtrlCustom.cpp">
+      <Filter>CCustomListCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="MyButton.cpp">
+      <Filter>CCustomListCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="MyRadioButton.cpp">
+      <Filter>CCustomListCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemKeyTextValue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemKeyValueExt.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgBody_x_www_form_urlencoded.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgBodyRaw.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgBodyFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
