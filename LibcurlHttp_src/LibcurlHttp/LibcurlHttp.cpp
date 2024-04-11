@@ -380,7 +380,7 @@ public:
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
 		downloader.SetUrl(sUrl.c_str());
 		if (localFileName)
-			downloader.SetFileName(localFileName);
+			downloader.SetFile(localFileName);
 		downloader.SetTimtout(m_timeout);
 		downloader.SetUserAgent(m_userAgent);
 		downloader.SetHeaders(m_requestHeaders);
@@ -397,7 +397,7 @@ public:
 		m_customMothod = "";
 
 		if (downloadedFileName)
-			strcpy(downloadedFileName, downloader.GetFileName().c_str());
+			strcpy(downloadedFileName, downloader.GetFile().c_str());
 
 		return m_responseCode;
 	}

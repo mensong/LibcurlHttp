@@ -8,8 +8,8 @@ public:
 	HttpFileDownload();
 	virtual ~HttpFileDownload();
 
-	virtual bool SetFileName(const std::string& fileName);
-	virtual std::string GetFileName() const { return m_file; }
+	virtual bool SetFile(const std::string& fileName);
+	virtual std::string GetFile() const { return m_file; }
 
 	virtual bool Do() override;
 
@@ -24,6 +24,7 @@ protected:
 protected:
 	std::string getTimesampFileName();
 	bool createDirs(const std::string& dir);
+	std::string generateSaveFile(const std::string& dir = "");
 
 protected:
 	std::string m_file;

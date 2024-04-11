@@ -2,6 +2,7 @@
 #include "pystring.h"
 #include "../HttpHelper/Convertor.h"
 #include "../HttpHelper/UrlCoding.h"
+#include "../HttpHelper/url.hpp"
 #include <thread>
 #include <sstream>
 
@@ -17,7 +18,7 @@ HttpFileDownload::~HttpFileDownload()
 	closeFile();
 }
 
-bool HttpFileDownload::SetFileName(const std::string& fileName)
+bool HttpFileDownload::SetFile(const std::string& fileName)
 {
 	closeFile();
 
@@ -67,7 +68,7 @@ std::string HttpFileDownload::getTimesampFileName()
 	ss << std::this_thread::get_id();
 	ss << "-";
 	ss << ::GetTickCount64();
-	ss << ".tmp";
+	ss << ".download";
 	return ss.str();
 }
 
@@ -110,28 +111,51 @@ bool HttpFileDownload::createDirs(const std::string & dir)
 	return bSuccess;
 }
 
-
-
-bool HttpFileDownload::Do()
+std::string HttpFileDownload::generateSaveFile(const std::string& dir/* = ""*/)
 {
-	bool needRename = false;
 	std::string saveFileName;
+	std::string url = GetUrl();
 
-	//如果没有设置保存文件
-	if (m_file.empty())
+	//从url的path部分找文件名
+	Url uri(url);
+	std::string urlPath = uri.path();
+	size_t idx = urlPath.find_last_of("/\\");
+	if (idx != std::string::npos)
 	{
-		std::string url = GetUrl();
+		saveFileName = urlPath.substr(idx + 1);
+	}
+
+	//直接截取url最后的
+	if (pystring::iscempty(saveFileName))
+	{
 		size_t idx = url.find_last_of("/\\");
 		if (idx != std::string::npos)
 		{
 			saveFileName = url.substr(idx + 1);
 		}
-		if (saveFileName.size() == 0)
-		{
-			saveFileName = getTimesampFileName();
-		}		
+	}
 
-		needRename = true;
+	//生成时间戳文件名
+	if (pystring::iscempty(saveFileName))
+	{
+		saveFileName = getTimesampFileName();
+	}
+
+	return os_path::normpath(os_path::join(dir, saveFileName));
+}
+
+
+
+bool HttpFileDownload::Do()
+{
+	bool notSureName = false;
+	std::string saveFileName;
+
+	//如果没有设置保存文件
+	if (m_file.empty())
+	{
+		saveFileName = generateSaveFile("");
+		notSureName = true;
 	}	
 	else
 	{
@@ -142,8 +166,9 @@ bool HttpFileDownload::Do()
 		if (dwAttr & FILE_ATTRIBUTE_DIRECTORY)
 		{// 如果是目录
 			dir = m_file;
-			saveFileName = os_path::normpath(os_path::join(m_file, getTimesampFileName()));
-			needRename = true;
+			saveFileName = generateSaveFile(dir);
+			//saveFileName = os_path::normpath(os_path::join(m_file, getTimesampFileName()));
+			notSureName = true;
 		}
 		else
 		{//设置了具体文件路径
@@ -152,8 +177,9 @@ bool HttpFileDownload::Do()
 			if (c == '\\' || c == '/')
 			{
 				dir = m_file;
-				saveFileName = os_path::normpath(os_path::join(m_file, getTimesampFileName()));
-				needRename = true;
+				saveFileName = generateSaveFile(dir);
+				//saveFileName = os_path::normpath(os_path::join(m_file, getTimesampFileName()));
+				notSureName = true;
 			}
 			else
 			{
@@ -167,14 +193,14 @@ bool HttpFileDownload::Do()
 			createDirs(dir);
 	}
 
-	if (!SetFileName(saveFileName))
+	if (!SetFile(saveFileName))
 		return false;
 	
 	//执行下载
 	bool ret = __super::Do();
 
 	//从response中获得文件名
-	if (needRename && ret)
+	if (notSureName && ret)
 	{
 		std::vector<std::string> ContentDisposition = this->GetResponseHeaders("Content-Disposition", false);
 		if (ContentDisposition.size() == 0)
