@@ -17,89 +17,11 @@ typedef enum HttpDoErrorCode
 	ecDataError = -2,
 } HttpDoErrorCode;
 
-typedef enum FieldType
-{
-	ftNormal,
-	ftFile
-} FieldType;
-
-typedef struct FormField
-{
-	FieldType fieldType;
-	char* fieldName;
-	char* fieldValue;
-	//int fieldValueSize;
-	char* fileName;//只有在文件类型才有效
-
-	FormField()
-	{
-		fieldType = ftNormal;
-		fieldName = NULL;
-		fieldValue = NULL;
-		//fieldValueSize = 0;
-		fileName = NULL;
-	}
-
-	FormField(FieldType fieldType, const char* fieldName, const char* fieldValue, const char* fileName)
-	{
-		this->fieldType = fieldType;
-		this->fieldName = NULL;
-		this->fieldValue = NULL;
-		//this->fieldValueSize = 0;
-		this->fileName = NULL;
-
-		if (fieldName)
-		{
-			size_t len = strlen(fieldName);
-			this->fieldName = new char[len + 1];
-			strcpy_s(this->fieldName, len + 1, fieldName);
-		}
-		
-		if (fieldValue)
-		{
-			size_t len = strlen(fieldValue);
-			this->fieldValue = new char[len + 1];
-			strcpy_s(this->fieldValue, len + 1, fieldValue);
-		}
-
-		if (fileName)
-		{
-			size_t len = strlen(fileName);
-			this->fileName = new char[len + 1];
-			strcpy_s(this->fileName, len + 1, fileName);
-		}
-	}
-
-	void Release()
-	{
-		if (fieldName)
-		{
-			delete[] fieldName;
-			fieldName = NULL;
-		}
-		if (fieldValue)
-		{
-			delete[] fieldValue;
-			fieldValue = NULL;
-		}
-		if (fileName)
-		{
-			delete[] fileName;
-			fileName = NULL;
-		}
-	}
-
-	void Fill(FieldType _fieldType, const char* _fieldName, const char* _fieldValue, const char* _fileName)
-	{
-		new (this) FormField(_fieldType, _fieldName, _fieldValue, _fileName);
-	}
-
-} FormField;
-
 typedef struct MultipartField
 {
 	char* contenxtData;	//提交的是直接指定的内容，该字段有内容时，filePath字段无效
 	int contenxtDataSize;
+
 	char* filePath;		//提交的是文件，contenxtData有内容时，该字段无效
 	char* fileName;		//指定文件名
 
@@ -230,6 +152,10 @@ typedef struct MultipartField
 			multipartName,
 			mimeType);
 	}
+
+private:
+	MultipartField(const MultipartField& o) {}
+	MultipartField(const MultipartField* o) {}
 } MultipartField;
 
 //进度回调原型
@@ -252,7 +178,7 @@ public:
 
 	//设置自定义方法
 	//  DELETE PUT HEAD OPTIONS FUCK……，全大写
-	virtual void setCustomMothod(const char* mothod) = 0;
+	virtual void setCustomMethod(const char* method) = 0;
 
 	//设置进度回调
 	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) = 0;
@@ -281,16 +207,15 @@ public:
 	virtual int post_a(const char* url, ...) = 0;
 	virtual int post_b(const char* url, va_list argv) = 0;
 
-	//提交表单
-	virtual int postForm(const char* url, FormField* formDataArr, int nCountFormData) = 0;
-	// url, fieldtype1(1:普通字段；2:file字段), fieldname1, fieldvalue1, [如果fieldtype1==2则存在]fileName1,    
-	//      fieldtype2(1:普通字段；2:file字段), fieldname2, fieldvalue2, [如果fieldtype2==2则存在]fileName2, 
-	//      ……, NULL
+	//提交multipart
+	virtual int postMultipart(const char* url, MultipartField** multipartDataArr, int nCountMultipartData) = 0;
+	// url, fieldtype1(1:普通字段；2:file字段), fieldname1, fieldvalue1, mimeType, [如果fieldtype1==2则存在]fileName1,    
+	//      fieldtype2(1:普通字段；2:file字段), fieldname2, fieldvalue2, mimeType, [如果fieldtype2==2则存在]fileName2, 
+	//      ……, NULL(最后必须使用NULL结束)
 	virtual int postForm_a(const char* url, ...) = 0;
 	virtual int postForm_b(const char* url, va_list argv) = 0;
 
-	//提交multipart
-	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) = 0;
+	
 		
 	//下载网络文件到本地
 	// localFileName - 想要保存到的文件路径或目录，如果是目录则会在此目录下根据Content-Disposition的描述自动获取文件名或生成一个临时文件名
@@ -340,7 +265,7 @@ LIBCURLHTTP_API void ReleaseHttp(LibcurlHttp* p);
 LIBCURLHTTP_API void setTimeout(LibcurlHttp* http, int timeout);
 LIBCURLHTTP_API void setRequestHeader(LibcurlHttp* http, const char* key, const char* value);
 LIBCURLHTTP_API void setUserAgent(LibcurlHttp* http, const char* val);
-LIBCURLHTTP_API void setCustomMothod(LibcurlHttp* http, const char* mothod);
+LIBCURLHTTP_API void setCustomMethod(LibcurlHttp* http, const char* method);
 LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect);
 LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect);
@@ -351,9 +276,9 @@ LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...);
 LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
 LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...);
 LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL);
-LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCountFormData);
+
+LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField** multipartDataArr, int nCountMultipartData);
 LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...);
-LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
 
 LIBCURLHTTP_API int putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen);
 LIBCURLHTTP_API int putFile(LibcurlHttp* http, const char* url, const char* filePath);
@@ -389,7 +314,7 @@ public:
 	typedef void(*FN_setTimeout)(LibcurlHttp* http, int timeout);
 	typedef void(*FN_setRequestHeader)(LibcurlHttp* http, const char* key, const char* value);
 	typedef void(*FN_setUserAgent)(LibcurlHttp* http, const char* val);
-	typedef void(*FN_setCustomMothod)(LibcurlHttp* http, const char* mothod);
+	typedef void(*FN_setCustomMethod)(LibcurlHttp* http, const char* method);
 	typedef void(*FN_setProgress)(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 	typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
 	typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
@@ -399,9 +324,8 @@ public:
 	typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
 	typedef int(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
 	typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName, char* downloadedFileName);
-	typedef int(*FN_postForm)(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCoutFormData);
+	typedef int(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField** multipartDataArr, int nCountMultipartData);
 	typedef int(*FN_postForm_a)(LibcurlHttp* http, const char* url, ...);
-	typedef int(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
 	typedef const char* (*FN_getBody)(LibcurlHttp* http, int& len);
 	typedef int(*FN_getCode)(LibcurlHttp* http);
 	typedef int(*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
@@ -433,7 +357,7 @@ public:
 		DEF_PROC(hDll, setTimeout);
 		DEF_PROC(hDll, setRequestHeader);
 		DEF_PROC(hDll, setUserAgent);
-		DEF_PROC(hDll, setCustomMothod);
+		DEF_PROC(hDll, setCustomMethod);
 		DEF_PROC(hDll, setProgress);
 		DEF_PROC(hDll, setAutoRedirect);
 		DEF_PROC(hDll, setMaxRedirect); 
@@ -443,9 +367,8 @@ public:
 		DEF_PROC(hDll, post);
 		DEF_PROC(hDll, post_a);
 		DEF_PROC(hDll, download);
-		DEF_PROC(hDll, postForm);
-		DEF_PROC(hDll, postForm_a);
 		DEF_PROC(hDll, postMultipart);
+		DEF_PROC(hDll, postForm_a);
 		DEF_PROC(hDll, getBody);
 		DEF_PROC(hDll, getCode);
 		DEF_PROC(hDll, getResponseHeaderKeysCount);
@@ -469,7 +392,7 @@ public:
 	FN_setTimeout			setTimeout;
 	FN_setRequestHeader		setRequestHeader;
 	FN_setUserAgent			setUserAgent;
-	FN_setCustomMothod		setCustomMothod;
+	FN_setCustomMethod		setCustomMethod;
 	FN_setProgress			setProgress;
 	FN_setAutoRedirect		setAutoRedirect;
 	FN_setMaxRedirect		setMaxRedirect;
@@ -479,9 +402,8 @@ public:
 	FN_post					post;
 	FN_post_a				post_a;
 	FN_download				download;
-	FN_postForm				postForm;
-	FN_postForm_a			postForm_a;
 	FN_postMultipart		postMultipart;
+	FN_postForm_a			postForm_a;
 	FN_getBody				getBody;
 	FN_getCode				getCode;
 	FN_getResponseHeaderKeysCount getResponseHeaderKeysCount;

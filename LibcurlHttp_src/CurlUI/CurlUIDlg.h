@@ -60,6 +60,7 @@ public:
 	CTabCtrl m_tabParams;
 	afx_msg void OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnEnChangeEditUrl();
+	afx_msg void OnNMClickbtnsetting(NMHDR* pNMHDR, LRESULT* pResult);
 };
 
 template<class TPage>

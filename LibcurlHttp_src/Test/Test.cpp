@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 
 	//FreeLibrary(hDll);
 
-	//HTTP_CLIENT::Ins().setCustomMothod("ILOVEYOU");
+	//HTTP_CLIENT::Ins().setCustomMethod("ILOVEYOU");
 
 	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", NULL, 1, "f1", "v1", 1, "f2", "v2", NULL);
 	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", "idgcs-min.zip", 1, "f1", "v1", 1, "f2", "v2", NULL);
@@ -130,6 +130,8 @@ int main(int argc, char** argv)
 
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
+	//http->setCustomMethod("post");
+
 	std::pair<COORD, COORD> progressPos;
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
@@ -141,12 +143,20 @@ int main(int argc, char** argv)
 	//char downloadedFileName[MAX_PATH];
 	//HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//", downloadedFileName);
 
-	std::string filename = http->UrlUTF8Encode("1.mp5");
-	MultipartField mf(NULL, 0, "D:\\1.mp5", NULL, "file", NULL);
-	int httpCode = http->postMultipart("http://10.71.50.21/upload/", &mf, 1);
+	//std::string filename = http->UrlUTF8Encode("Test.exe");
+	//MultipartField* mf = new MultipartField(NULL, 0, "Test.exe", filename.c_str(), "file", NULL);
+	//http->postMultipart("http://192.168.77.1/upload", &mf, 1);
+	//delete mf;
+
+	//MultipartField* mf1 = new MultipartField("test", 4, NULL, NULL, "file", NULL);
+	//http->postMultipart("http://192.168.77.1/upload", &mf1, 1);
+	//delete mf1;
 	//int len = 0;
 	//const char* body = http->getBody(len);
 	//std::string sBody = http->UTF8ToAnsi(body);
+
+	http->putData("http://192.168.77.1/upload", (const unsigned char*)"test", 4);
+	http->putFile("http://192.168.77.1/upload", "Test.exe");
 
 #if 0
 	std::string url(1024, 0);

@@ -70,7 +70,7 @@ public:
 		httpClient.SetTimtout(m_timeout);
 		httpClient.SetUserAgent(m_userAgent);
 		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetCustomMethod(m_customMethod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
@@ -82,7 +82,7 @@ public:
 		m_responseBody = httpClient.GetBody();
 		m_responseHeaders = httpClient.GetResponseHeaders();
 		
-		m_customMothod = "";
+		m_customMethod = "";
 		return m_responseCode;
 	}	
 
@@ -141,7 +141,7 @@ public:
 		httpClient.SetUserAgent(m_userAgent);
 		httpClient.SetHeaders(m_requestHeaders);
 		httpClient.SetHeader("Content-Type", contentType);
-		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetCustomMethod(m_customMethod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
@@ -160,7 +160,7 @@ public:
 		m_responseBody = httpClient.GetBody();
 		m_responseHeaders = httpClient.GetResponseHeaders();
 
-		m_customMothod = "";
+		m_customMethod = "";
 		return m_responseCode;
 	}
 	
@@ -201,43 +201,6 @@ public:
 		return post(url, sContet.c_str(), (int)sContet.size());
 	}
 
-	virtual int postForm(const char* url, FormField* formDataArr, int nCountFormData)
-	{
-		HttpClientFC httpClient;
-
-		for (int i = 0; i < nCountFormData; ++i)
-		{
-			if (formDataArr[i].fieldName == NULL)
-				continue;
-			
-			httpClient.AddFormField(formDataArr[i]);
-		}
-
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		httpClient.SetUrl(sUrl.c_str());
-		httpClient.SetTimtout(m_timeout);
-		httpClient.SetUserAgent(m_userAgent);
-		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMothod(m_customMothod);
-		httpClient.SetProgress(m_progressCallback, m_progressUserData);
-		httpClient.SetAutoRedirect(m_autoRedirect);
-		httpClient.SetMaxRedirect(m_maxRedirect);
-		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
-		if (nCountFormData == 0)
-		{//防止post空内容时出现411错误
-			httpClient.SetHeader("Content-Length", "0");
-		}
-
-		httpClient.Do();
-
-		m_responseCode = httpClient.GetHttpCode();
-		m_responseBody = httpClient.GetBody();
-		m_responseHeaders = httpClient.GetResponseHeaders();
-
-		m_customMothod = "";
-		return m_responseCode;
-	}
-
 	virtual int postForm_a(const char* url, ...) override
 	{
 		va_list argv;
@@ -257,80 +220,62 @@ public:
 		int fieldType = 0;
 		char* key = NULL;
 		char* val = NULL;
+		char* mimeType = NULL;
 		char* fileName = NULL;
 		
+		std::vector<MultipartField*> multipartDataArr;
+
 		do
 		{
-			bool fieldValid = true;
 			fieldType = va_arg(argv, int);
 			if (!fieldType)
 				break;
+
 			key = va_arg(argv, char*);
 			if (!key)
 				break;
+
 			val = va_arg(argv, char*);
 			if (!val)
-				fieldValid = false;//允许传null值过来，但一旦传null过来，则表示此field为无效field，将不参与传递
+				val = "";
+
+			mimeType = va_arg(argv, char*);
+
 			if (fieldType == 2)
 				fileName = va_arg(argv, char*);
 
-			if (fieldValid)
-			{
-				FormField ff;
-				ff.fieldName = key;
-				ff.fieldValue = val;
-				if (fieldType == 1)
-					ff.fieldType = ftNormal;
-				else if (fieldType == 2)
-				{
-					ff.fieldType = ftFile;
-					if (fileName)
-						ff.fileName = fileName;
-				}
-
-				httpClient.AddFormField(ff);
-			}
+			MultipartField* multipart = new MultipartField();
+			if (fieldType == 2)
+				multipart->Fill(NULL, NULL, val, fileName, key, mimeType);
+			else
+				multipart->Fill(val, strlen(val), NULL, NULL, key, mimeType);
+			
+			multipartDataArr.push_back(multipart);			
 		} while (1);
 		
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		httpClient.SetUrl(sUrl.c_str());
-		httpClient.SetTimtout(m_timeout);
-		httpClient.SetUserAgent(m_userAgent);
-		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMothod(m_customMothod);
-		httpClient.SetProgress(m_progressCallback, m_progressUserData);
-		httpClient.SetAutoRedirect(m_autoRedirect);
-		httpClient.SetMaxRedirect(m_maxRedirect);
-		if (httpClient.GetFormFields().size() == 0)
-		{//防止post空内容时出现411错误
-			httpClient.SetHeader("Content-Length", "0");
+		int res = postMultipart(url, multipartDataArr.data(), multipartDataArr.size());
+
+		for (size_t i = 0; i < multipartDataArr.size(); i++)
+		{
+			delete multipartDataArr[i];
 		}
+		multipartDataArr.clear();
 
-		httpClient.Do();
-
-		m_responseCode = httpClient.GetHttpCode();
-		m_responseBody = httpClient.GetBody();
-		m_responseHeaders = httpClient.GetResponseHeaders();
-
-		m_customMothod = "";
-		return m_responseCode;
+		return res;
 	}
 	
-	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) override
+	virtual int postMultipart(const char* url, MultipartField** multipartDataArr, int nCountMultipartData) override
 	{
 		HttpClientFC httpClient;
 
-		for (int i = 0; i < nCountMultipartData; ++i)
-		{
-			httpClient.AddMultipartField(&multipartDataArr[i]);
-		}
+		httpClient.SetMultipartFields((const MultipartField**)multipartDataArr, nCountMultipartData);
 
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
 		httpClient.SetUrl(sUrl.c_str());
 		httpClient.SetTimtout(m_timeout);
 		httpClient.SetUserAgent(m_userAgent);
 		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetCustomMethod(m_customMethod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
@@ -346,7 +291,7 @@ public:
 		m_responseBody = httpClient.GetBody();
 		m_responseHeaders = httpClient.GetResponseHeaders();
 
-		m_customMothod = "";
+		m_customMethod = "";
 		return m_responseCode;
 	}
 
@@ -368,9 +313,9 @@ public:
 		m_userAgent = val;
 	}
 
-	virtual void setCustomMothod(const char* mothod) override
+	virtual void setCustomMethod(const char* method) override
 	{
-		m_customMothod = mothod;
+		m_customMethod = method;
 	}
 
 	virtual int download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) override
@@ -384,7 +329,7 @@ public:
 		downloader.SetTimtout(m_timeout);
 		downloader.SetUserAgent(m_userAgent);
 		downloader.SetHeaders(m_requestHeaders);
-		downloader.SetCustomMothod(m_customMothod);
+		downloader.SetCustomMethod(m_customMethod);
 		downloader.SetProgress(m_progressCallback, m_progressUserData);
 		downloader.SetAutoRedirect(m_autoRedirect);
 		downloader.SetMaxRedirect(m_maxRedirect);
@@ -394,7 +339,7 @@ public:
 		m_responseCode = downloader.GetHttpCode();
 		m_responseHeaders = downloader.GetResponseHeaders();
 
-		m_customMothod = "";
+		m_customMethod = "";
 
 		if (downloadedFileName)
 			strcpy(downloadedFileName, downloader.GetFile().c_str());
@@ -412,7 +357,7 @@ public:
 		httpClient.SetTimtout(m_timeout);
 		httpClient.SetUserAgent(m_userAgent);
 		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetCustomMethod(m_customMethod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
@@ -433,7 +378,7 @@ public:
 		m_responseBody = httpClient.GetBody();
 		m_responseHeaders = httpClient.GetResponseHeaders();
 
-		m_customMothod = "";
+		m_customMethod = "";
 		return m_responseCode;
 	}
 
@@ -451,7 +396,7 @@ public:
 		httpClient.SetTimtout(m_timeout);
 		httpClient.SetUserAgent(m_userAgent);
 		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMothod(m_customMothod);
+		httpClient.SetCustomMethod(m_customMethod);
 		httpClient.SetProgress(m_progressCallback, m_progressUserData);
 		httpClient.SetAutoRedirect(m_autoRedirect);
 		httpClient.SetMaxRedirect(m_maxRedirect);
@@ -464,7 +409,7 @@ public:
 		m_responseBody = httpClient.GetBody();
 		m_responseHeaders = httpClient.GetResponseHeaders();
 
-		m_customMothod = "";
+		m_customMethod = "";
 		return m_responseCode;
 	}
 
@@ -661,7 +606,7 @@ public:
 private:
 	int m_timeout;
 	std::string m_userAgent;
-	std::string m_customMothod;
+	std::string m_customMethod;
 	std::map<std::string, std::string> m_requestHeaders;
 
 	bool m_autoRedirect;
@@ -709,9 +654,9 @@ LIBCURLHTTP_API void setUserAgent(LibcurlHttp* http, const char* val)
 	return http->setUserAgent(val);
 }
 
-LIBCURLHTTP_API void setCustomMothod(LibcurlHttp* http, const char* mothod)
+LIBCURLHTTP_API void setCustomMethod(LibcurlHttp* http, const char* method)
 {
-	return http->setCustomMothod(mothod);
+	return http->setCustomMethod(method);
 }
 
 LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData)
@@ -773,11 +718,6 @@ LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* loc
 	return http->download(url, localFileName, downloadedFileName);
 }
 
-LIBCURLHTTP_API int postForm(LibcurlHttp* http, const char* url, FormField* formDataArr, int nCountFormData)
-{
-	return http->postForm(url, formDataArr, nCountFormData);
-}
-
 LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
@@ -790,7 +730,7 @@ LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...)
 	return ret;
 }
 
-LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData)
+LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField** multipartDataArr, int nCountMultipartData)
 {
 	return http->postMultipart(url, multipartDataArr, nCountMultipartData);
 }

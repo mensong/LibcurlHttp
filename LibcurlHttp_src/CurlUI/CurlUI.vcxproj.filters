@@ -93,6 +93,9 @@
     <ClInclude Include="..\HttpHelper\UrlCoding.h">
       <Filter>URL</Filter>
     </ClInclude>
+    <ClInclude Include="CDlgSetting.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CurlUI.cpp">
@@ -154,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="..\HttpHelper\UrlCoding.cpp">
       <Filter>URL</Filter>
+    </ClCompile>
+    <ClCompile Include="CDlgSetting.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

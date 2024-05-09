@@ -66,6 +66,7 @@ BEGIN_MESSAGE_MAP(CCurlUIDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_RUN, &CCurlUIDlg::OnBnClickedBtnRun)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CCurlUIDlg::OnTcnSelchangeTab1)
 	ON_EN_CHANGE(IDC_EDIT_URL, &CCurlUIDlg::OnEnChangeEditUrl)
+	ON_NOTIFY(NM_CLICK, IDC_btnSetting, &CCurlUIDlg::OnNMClickbtnsetting)
 END_MESSAGE_MAP()
 
 
@@ -261,7 +262,31 @@ int CCurlUIDlg::_PROGRESS_CALLBACK(
 
 void CCurlUIDlg::dumpResponse(LibcurlHttp* http)
 {
-	http->getCode();
+	std::string headers;
+	int headerCount = http->getResponseHeaderKeysCount();
+	for (int i = 0; i < headerCount; i++)
+	{
+		const char* key = http->getResponseHeaderKey(i);
+		if (!key)
+			continue;
+
+		std::string value;
+		int valueCount = http->getResponseHeadersCount(key);
+		for (int j = 0; j < valueCount; j++)
+		{
+			const char* pval = http->getResponseHeader(key, j);
+			if (!pval)
+				continue;
+
+			if (!value.empty())
+				value += ';';
+			value += pval;
+		}
+
+		headers += key + std::string(":") + value + "\r\n";
+	}
+
+	m_editResponseHeader.SetWindowText(CA2W(headers.c_str()));
 }
 
 void CCurlUIDlg::OnBnClickedBtnRun()
@@ -283,6 +308,7 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
 	http->setProgress(_PROGRESS_CALLBACK, this);
+	http->setAutoRedirect(false);
 
 	for (size_t i = 0; i < headers.size(); i++)
 	{
@@ -306,7 +332,7 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	{
 		CDlgBodyMultipart* pDlg = (CDlgBodyMultipart*)m_vctPages[curTab];
 		std::vector<std::pair<CString, std::pair<CString, bool>>> values = pDlg->GetValues();
-		MultipartField* multiparts = new MultipartField[values.size()];
+		std::vector<MultipartField*> multiparts;
 		for (size_t i = 0; i < values.size(); i++)
 		{
 			CString key = values[i].first;
@@ -314,17 +340,24 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 
 			std::string name = CW2A(key);
 			std::string content = CW2A(val);
+
+			MultipartField* part = new MultipartField;
 			if (values[i].second.second)
 			{
-				multiparts[i].Fill(NULL, 0, content.c_str(), NULL, name.c_str(), NULL);
+				part->Fill(NULL, 0, content.c_str(), NULL, name.c_str(), NULL);
 			}
 			else
 			{
-				multiparts[i].Fill(content.c_str(), content.size(), NULL, NULL, name.c_str(), NULL);
+				part->Fill(content.c_str(), content.size(), NULL, NULL, name.c_str(), NULL);
 			}
-			
+			multiparts.push_back(part);
 		}
-		http->postMultipart(CW2A(sUrl), multiparts, values.size());
+		http->postMultipart(CW2A(sUrl), multiparts.data(), values.size());
+
+		for (size_t i = 0; i < multiparts.size(); i++)
+		{
+			delete multiparts[i];
+		}
 		break;
 	}
 	case 3:
@@ -345,6 +378,8 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	default:
 		break;
 	}
+
+	dumpResponse(http);
 
 	//http->post(http->WidebyteToAnsi(sUrl.GetString()), NULL, 0);
 	//int len = 0;
@@ -379,4 +414,12 @@ void CCurlUIDlg::OnEnChangeEditUrl()
 {
 	refreshQueryParams();
 	m_editUrl.SetFocus();
+}
+
+
+void CCurlUIDlg::OnNMClickbtnsetting(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	
+
+	*pResult = 0;
 }

@@ -35,8 +35,8 @@ public:
 	virtual ~HttpClient();
 
 	//设置请求方法，一般为：OPTIONS GET POST PUT HEAD DELETE TRACE CONNECT，还可以为其它任意字符串
-	virtual void SetCustomMothod(const std::string& mothod) { m_customMethod = mothod; }
-	virtual const std::string& GetCustomMothod(const std::string& mothodDef = "GET") const;
+	virtual void SetCustomMethod(const std::string& method) { m_customMethod = method; }
+	virtual const std::string& GetCustomMethod(const std::string& methodDef = "GET") const;
 
 	virtual void SetUrl(const std::string& url) { m_url = url; }
 	virtual const std::string& GetUrl() const { return m_url; }
@@ -61,20 +61,24 @@ public:
 	virtual void SetTimtout(int t) { m_timeout = t; }
 	virtual int GetTimeout() const { return m_timeout; }
 
-	//post form
-	virtual void ResetFormFields() { m_formFields.clear(); m_isInnerPost = false; }
-	virtual void AddFormField(const FormField& field) { m_formFields.push_back(field); m_isInnerPost = true; }
-	virtual const std::vector<FormField>& GetFormFields() { return m_formFields; }
-
 	//normal post
 	virtual void ResetNormalPost() { m_postData.clear(); m_isInnerPost = false; }
 	virtual void SetNormalPostData(const std::string& data) { m_postData = data; m_isInnerPost = true; }
 	virtual const std::string& GetNormalPostData() { return m_postData; }
 
 	//multipart post
-	virtual void ResetMultipartFields() { m_multipartFields.clear(); m_isInnerPost = false; }
-	virtual void AddMultipartField(const MultipartField* field) { m_multipartFields.push_back(field); m_isInnerPost = true; }
-	virtual const std::vector<const MultipartField*>& GetMultipartFields() { return m_multipartFields; }
+	virtual void ResetMultipartFields() { 
+		m_multipartFields = NULL; 
+		m_multipartFieldsSize = 0;
+		m_isInnerPost = false; 
+	}
+	virtual void SetMultipartFields(const MultipartField** fields, int size) 
+	{
+		m_multipartFields = const_cast<MultipartField**>(fields);
+		m_multipartFieldsSize = size;
+		m_isInnerPost = (fields != NULL); 
+	}
+	virtual MultipartField** GetMultipartFields() { return m_multipartFields; }
 
 	//put 
 	virtual void ResetPutData() { m_putData = NULL; m_putDataLen = 0; }
@@ -175,13 +179,11 @@ protected:
 	std::map<std::string, std::string> m_headers;
 
 	/**
-		如果m_formFields有数据，则post form；
-		如果m_formFields没有数据，m_postData不为空，则normal post；
-		否则get
+		优先使用m_postData；
 	*/
-	std::vector<FormField> m_formFields;
 	std::string m_postData;
-	std::vector<const MultipartField*> m_multipartFields;
+	MultipartField** m_multipartFields;
+	int m_multipartFieldsSize;
 
 	//put m_putData与m_putFile二选一
 	unsigned char* m_putData;

@@ -51,6 +51,8 @@ HttpClient::HttpClient()
 	, m_putData(NULL)
 	, m_putDataLen(0)
 	, m_decompressIfGzip(true)
+	, m_multipartFields(NULL)
+	, m_multipartFieldsSize(0)
 {
 	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
 }
@@ -59,11 +61,11 @@ HttpClient::~HttpClient()
 {
 }
 
-const std::string& HttpClient::GetCustomMothod(const std::string& mothodDef /*= "GET"*/) const
+const std::string& HttpClient::GetCustomMethod(const std::string& methodDef /*= "GET"*/) const
 {
 	if (m_customMethod.empty() || m_customMethod == "")
 	{
-		return mothodDef;
+		return methodDef;
 	}
 	return m_customMethod;
 }
@@ -179,10 +181,11 @@ bool HttpClient::Do()
 		}
 
 		/** set body */
-		std::string sMethod;		
+		std::string sMethod;
+#if 0
 		if (m_formFields.size() > 0)
 		{
-			sMethod = GetCustomMothod("POST");
+			sMethod = GetCustomMethod("POST");
 			curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
 			//post form
@@ -232,9 +235,10 @@ bool HttpClient::Do()
 				break;//return
 			}
 		}
-		else if (m_postData.size() > 0)
+#endif		
+		if (m_postData.size() > 0)
 		{
-			sMethod = GetCustomMothod("POST");
+			sMethod = GetCustomMethod("POST");
 			curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
 			/** set post fields */
@@ -251,15 +255,15 @@ bool HttpClient::Do()
 				break;//return
 			}
 		}
-		else if (m_multipartFields.size() > 0)
+		else if (m_multipartFieldsSize > 0 && m_multipartFields)
 		{
-			sMethod = GetCustomMothod("POST");
+			sMethod = GetCustomMethod("POST");
 			curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
 			mime = curl_mime_init(curl);
 			if (mime)
 			{
-				for (int i = 0; i < m_multipartFields.size(); ++i)
+				for (int i = 0; i < m_multipartFieldsSize; ++i)
 				{
 					const MultipartField* mpf = m_multipartFields[i];
 					curl_mimepart *part = curl_mime_addpart(mime);
@@ -303,7 +307,7 @@ bool HttpClient::Do()
 		}
 		else if (m_putData || m_putFile.size() > 0)
 		{
-			sMethod = GetCustomMothod("PUT");
+			sMethod = GetCustomMethod("PUT");
 			curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
 			if (m_putData)
@@ -342,9 +346,9 @@ bool HttpClient::Do()
 		else
 		{
 			if (m_isInnerPost)
-				sMethod = GetCustomMothod("POST");
+				sMethod = GetCustomMethod("POST");
 			else
-				sMethod = GetCustomMothod("GET");
+				sMethod = GetCustomMethod("GET");
 		}
 
 		if (sMethod.c_str()[0] != '\0')
