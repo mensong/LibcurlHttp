@@ -182,6 +182,11 @@ typedef struct MultipartField
 		}
 	}
 
+	~MultipartField()
+	{
+		Release();
+	}
+
 	void Release()
 	{
 		if (contenxtData)

@@ -322,7 +322,7 @@ public:
 
 		for (int i = 0; i < nCountMultipartData; ++i)
 		{
-			httpClient.AddMultipartField(multipartDataArr[i]);
+			httpClient.AddMultipartField(&multipartDataArr[i]);
 		}
 
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);

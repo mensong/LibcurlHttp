@@ -73,8 +73,8 @@ public:
 
 	//multipart post
 	virtual void ResetMultipartFields() { m_multipartFields.clear(); m_isInnerPost = false; }
-	virtual void AddMultipartField(const MultipartField& field) { m_multipartFields.push_back(field); m_isInnerPost = true; }
-	virtual const std::vector<MultipartField>& GetMultipartFields() { return m_multipartFields; }
+	virtual void AddMultipartField(const MultipartField* field) { m_multipartFields.push_back(field); m_isInnerPost = true; }
+	virtual const std::vector<const MultipartField*>& GetMultipartFields() { return m_multipartFields; }
 
 	//put 
 	virtual void ResetPutData() { m_putData = NULL; m_putDataLen = 0; }
@@ -177,7 +177,7 @@ protected:
 	*/
 	std::vector<FormField> m_formFields;
 	std::string m_postData;
-	std::vector<MultipartField> m_multipartFields;
+	std::vector<const MultipartField*> m_multipartFields;
 
 	//put m_putData与m_putFile二选一
 	unsigned char* m_putData;

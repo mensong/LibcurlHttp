@@ -261,30 +261,31 @@ bool HttpClient::Do()
 			{
 				for (int i = 0; i < m_multipartFields.size(); ++i)
 				{
-					const MultipartField& mpf = m_multipartFields[i];
+					const MultipartField* mpf = m_multipartFields[i];
 					curl_mimepart *part = curl_mime_addpart(mime);
 
 					//set data
-					if (mpf.contenxtData)
+					if (mpf->contenxtData)
 					{
-						curl_mime_data(part, mpf.contenxtData, (mpf.contenxtDataSize > 0 ? mpf.contenxtDataSize : strlen(mpf.contenxtData)));
+						curl_mime_data(part, mpf->contenxtData, 
+							(mpf->contenxtDataSize > 0 ? mpf->contenxtDataSize : strlen(mpf->contenxtData)));
 					}
-					else if (mpf.filePath)
+					else if (mpf->filePath)
 					{
-						curl_mime_filedata(part, mpf.filePath);
+						curl_mime_filedata(part, mpf->filePath);
 					}
 
 					//set name 
-					if (mpf.multipartName)
-						curl_mime_name(part, mpf.multipartName);
+					if (mpf->multipartName)
+						curl_mime_name(part, mpf->multipartName);
 
 					//set filename
-					if (mpf.fileName)
-						curl_mime_filename(part, mpf.fileName);
+					if (mpf->fileName)
+						curl_mime_filename(part, mpf->fileName);
 
 					//set mime type
-					if (mpf.mimeType)
-						curl_mime_type(part, mpf.mimeType);
+					if (mpf->mimeType)
+						curl_mime_type(part, mpf->mimeType);
 				}
 
 				CURLcode code = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
