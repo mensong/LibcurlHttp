@@ -88,16 +88,21 @@ typedef struct FormField
 			fileName = NULL;
 		}
 	}
+
+	void Fill(FieldType _fieldType, const char* _fieldName, const char* _fieldValue, const char* _fileName)
+	{
+		new (this) FormField(_fieldType, _fieldName, _fieldValue, _fileName);
+	}
+
 } FormField;
 
 typedef struct MultipartField
 {
 	char* contenxtData;	//提交的是直接指定的内容，该字段有内容时，filePath字段无效
 	int contenxtDataSize;
-
 	char* filePath;		//提交的是文件，contenxtData有内容时，该字段无效
-	
-	char* fileName;			//指定文件名	
+	char* fileName;		//指定文件名
+
 	char* multipartName;	//名称
 	char* mimeType;			//Mime type
 

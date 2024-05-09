@@ -425,11 +425,13 @@ std::string decode(const char *s, const char *e) {
     o.reserve(e-s);
     while(s!=e) {
         char c=*s++, a, b;
+#if 0
         if (c=='%') {
             if (s==e || (a=get_hex_digit(*s++))<0 || s==e || (b=get_hex_digit(*s++))<0)
                 throw Url::parse_error("Invalid percent encoding");
             c=(a<<4)|b;
         }
+#endif
         o.push_back(c);
     }
     return o;
@@ -443,11 +445,13 @@ std::string decode_plus(const char *s, const char *e) {
         char c=*s++, a, b;
         if (c=='+')
             c=' ';
+#if 0
         else if (c=='%') {
             if (s==e || (a=get_hex_digit(*s++))<0 || s==e || (b=get_hex_digit(*s++))<0)
                 throw Url::parse_error("Invalid percent encoding");
             c=(a<<4)|b;
         }
+#endif
         o.push_back(c);
     }
     return o;
@@ -461,6 +465,7 @@ class encode {
         const std::string& m_s;
         std::uint8_t m_mask;
     friend std::ostream& operator<< (std::ostream& o, const encode& e) {
+#if 0
         for (int i=0; i<e.m_s.size(); ++i)
 		{
 			const char c = e.m_s[i];
@@ -469,6 +474,9 @@ class encode {
             else
                 o<<'%'<<"0123456789ABCDEF"[c>>4]<<"0123456789ABCDEF"[c&0xF];
 		}
+#else
+        o << e.m_s;
+#endif
         return o;
     }
 };
@@ -481,6 +489,7 @@ class encode_query_key {
         const std::string& m_s;
         std::uint8_t m_mask;
     friend std::ostream& operator<< (std::ostream& o, const encode_query_key& e) {
+#if 0
 		for (int i=0; i<e.m_s.size(); ++i)
 		{
 			const char c = e.m_s[i];
@@ -499,6 +508,9 @@ class encode_query_key {
             else
                 o<<'%'<<"0123456789ABCDEF"[c>>4]<<"0123456789ABCDEF"[c&0xF];
 		}
+#else
+        o << e.m_s;
+#endif
         return o;
     }
 };
@@ -511,6 +523,7 @@ class encode_query_val {
         const std::string& m_s;
         std::uint8_t m_mask;
     friend std::ostream& operator<< (std::ostream& o, const encode_query_val& e) {
+#if 0
 		for (int i=0; i<e.m_s.size(); ++i)
 		{
 			const char c = e.m_s[i];
@@ -527,6 +540,9 @@ class encode_query_val {
             else
                 o<<'%'<<"0123456789ABCDEF"[c>>4]<<"0123456789ABCDEF"[c&0xF];
 		}
+#else
+        o << e.m_s;
+#endif
         return o;
     }
 };
@@ -896,6 +912,7 @@ void Url::build_url() const {
         url<<encode_query_key(it->key(), 0x1F);
         if (!it->val().empty())
             url<<"="<<encode_query_val(it->val(), 0x1F);
+        //&
         while(++it!=end) {
             if (it->key().empty())
                 throw Url::build_error("A query entry has no key");
