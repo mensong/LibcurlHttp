@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "afxdialogex.h"
-
+#include <utility>
 
 // CItemKeyValueExt 对话框
 
@@ -15,15 +15,21 @@ public:
 // 对话框数据
 	enum { IDD = IDD_DIALOG_KEY_VALUE_EXT };
 
-	int m_rowIdx;
+	bool IsEnable();
+	bool IsFile();
+	std::pair<CString, CString> GetKeyValue();
+	void SetKeyValue(const CString& key, const CString& value);
+
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
-
+	virtual BOOL OnInitDialog();
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedBtnDel();
 	afx_msg void OnBnClickedChkIsFile();
 	CButton m_btnIsFile;
 	CEdit m_editValue;
+	CButton m_chkEnable;
+	CEdit m_editKey;
 };

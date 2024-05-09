@@ -14,6 +14,11 @@
 #include "DlgBodyRaw.h"
 #include "DlgBodyFile.h"
 
+#include "../HttpHelper/url.hpp"
+#include "../pystring/pystring.h"
+#include "../HttpHelper/Convertor.h"
+#include "../HttpHelper/UrlCoding.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -60,6 +65,7 @@ BEGIN_MESSAGE_MAP(CCurlUIDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BTN_RUN, &CCurlUIDlg::OnBnClickedBtnRun)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CCurlUIDlg::OnTcnSelchangeTab1)
+	ON_EN_CHANGE(IDC_EDIT_URL, &CCurlUIDlg::OnEnChangeEditUrl)
 END_MESSAGE_MAP()
 
 
@@ -123,6 +129,8 @@ BOOL CCurlUIDlg::OnInitDialog()
 	m_vctPages[0]->ShowWindow(SW_SHOW);
 	m_scaleTab.Init(m_tabParams.GetSafeHwnd());
 
+	m_progress.SetRange(0, 100);
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -162,10 +170,104 @@ HCURSOR CCurlUIDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+CString CCurlUIDlg::generateUrlByQueryParams(const CString& srcUrl)
+{
+	DlgQueryParams* dlg = dynamic_cast<DlgQueryParams*>(m_vctPages[0]);
+	if (!dlg)
+		return CString();
 
+	auto kvs = dlg->GetQueryParams();
+
+	std::string sUrl = CW2A(srcUrl.GetString());
+	Url url(sUrl);
+	url.set_query().clear();
+		
+	for (size_t i = 0; i < kvs.size(); i++)
+	{
+		CString k = kvs[i].first;
+		if (k.IsEmpty())
+			continue;
+		CString v = kvs[i].second;
+
+		std::string sKey = UrlCoding::UrlUTF8Encode(GL::WideByte2Ansi(k.GetString()).c_str());
+		std::string sValue = UrlCoding::UrlUTF8Encode(GL::WideByte2Ansi(v.GetString()).c_str());
+		url.add_query(sKey.c_str(), sValue.c_str());
+	}
+
+	return CA2W(url.str().c_str());
+}
+
+void CCurlUIDlg::refreshQueryParams()
+{
+	DlgQueryParams* dlg = dynamic_cast<DlgQueryParams*>(m_vctPages[0]);
+	if (!dlg)
+		return;
+	dlg->Clear();
+
+	CString csUrl;
+	m_editUrl.GetWindowText(csUrl);
+	if (csUrl.IsEmpty())
+		return;
+
+	std::string sUrl = CW2A(csUrl.GetString());
+	Url url(sUrl);
+	auto query = url.query();
+	for (size_t i = 0; i < query.size(); i++)
+	{
+		std::string k = query[i].key();
+		std::string v = query[i].val();
+
+		CString key, val;
+		key = CA2W(UrlCoding::UrlUTF8Decode(k.c_str()).c_str());
+		val = CA2W(UrlCoding::UrlUTF8Decode(v.c_str()).c_str());
+
+		dlg->AddQueryParam(key, val);
+	}
+}
+
+std::vector<std::pair<CString, CString>> CCurlUIDlg::getHeaders()
+{
+	std::vector<std::pair<CString, CString>> ret;
+
+	DlgHeader* dlg = dynamic_cast<DlgHeader*>(m_vctPages[1]);
+	if (!dlg)
+		return ret;
+
+	auto kvs = dlg->GetHeaders();
+	for (size_t i = 0; i < kvs.size(); i++)
+	{
+		if (kvs[i].first.IsEmpty())
+			continue;
+		ret.push_back(std::make_pair(kvs[i].first, kvs[i].second));
+	}
+
+	return ret;
+}
+
+int CCurlUIDlg::_PROGRESS_CALLBACK(
+	double downloadTotal, double downloadNow,
+	double uploadTotal, double uploadNow,
+	void* userData)
+{
+	CCurlUIDlg* This = (CCurlUIDlg*)userData;
+	if (uploadTotal != 0)
+	{
+		int pos = uploadNow / uploadTotal * 100;
+		This->m_progress.SetPos(pos);
+	}
+
+	return 0;
+}
+
+void CCurlUIDlg::dumpResponse(LibcurlHttp* http)
+{
+	http->getCode();
+}
 
 void CCurlUIDlg::OnBnClickedBtnRun()
 {
+	m_progress.SetPos(0);
+
 	CString sMethod;
 	m_cmbMethod.GetWindowText(sMethod);
 	if (sMethod.IsEmpty())
@@ -175,15 +277,83 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	if (sUrl.IsEmpty())
 		return;
 
+	sUrl = generateUrlByQueryParams(sUrl);
+	auto headers = getHeaders();
+
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
-	http->post(http->WidebyteToAnsi(sUrl.GetString()), NULL, 0);
-	int len = 0;
-	const char* pBody = http->getBody(len);
-	if (len > 0)
+
+	http->setProgress(_PROGRESS_CALLBACK, this);
+
+	for (size_t i = 0; i < headers.size(); i++)
 	{
-		std::wstring wBody = http->UTF8ToWidebyte(pBody);
-		m_editResponseBody.SetWindowText(wBody.c_str());
+		http->setRequestHeader(CW2A(headers[i].first), CW2A(headers[i].second));
 	}
+
+	int curTab = m_tabParams.GetCurSel();
+	switch (curTab)
+	{
+	case 0:
+	{
+
+		break;
+	}
+	case 1:
+	{
+
+		break;
+	}
+	case 2:
+	{
+		CDlgBodyMultipart* pDlg = (CDlgBodyMultipart*)m_vctPages[curTab];
+		std::vector<std::pair<CString, std::pair<CString, bool>>> values = pDlg->GetValues();
+		MultipartField* multiparts = new MultipartField[values.size()];
+		for (size_t i = 0; i < values.size(); i++)
+		{
+			CString key = values[i].first;
+			CString val = values[i].second.first;
+
+			std::string name = CW2A(key);
+			std::string content = CW2A(val);
+			if (values[i].second.second)
+			{
+				multiparts[i].Fill(NULL, 0, content.c_str(), NULL, name.c_str(), NULL);
+			}
+			else
+			{
+				multiparts[i].Fill(content.c_str(), content.size(), NULL, NULL, name.c_str(), NULL);
+			}
+			
+		}
+		http->postMultipart(CW2A(sUrl), multiparts, values.size());
+		break;
+	}
+	case 3:
+	{
+
+		break;
+	}
+	case 4:
+	{
+
+		break;
+	}
+	case 5:
+	{
+
+		break;
+	}
+	default:
+		break;
+	}
+
+	//http->post(http->WidebyteToAnsi(sUrl.GetString()), NULL, 0);
+	//int len = 0;
+	//const char* pBody = http->getBody(len);
+	//if (len > 0)
+	//{
+	//	std::wstring wBody = http->UTF8ToWidebyte(pBody);
+	//	m_editResponseBody.SetWindowText(wBody.c_str());
+	//}
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 }
 
@@ -202,4 +372,11 @@ void CCurlUIDlg::OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult)
 	}
 
 	m_vctPages[sel]->ShowWindow(SW_SHOW);
+}
+
+
+void CCurlUIDlg::OnEnChangeEditUrl()
+{
+	refreshQueryParams();
+	m_editUrl.SetFocus();
 }

@@ -7,7 +7,6 @@
 #define IDD_DLG_QUERYPARAMS             130
 #define IDD_DLG_HEADER                  132
 #define IDD_DLG_BODY                    134
-#define IDD_DLG_BODY_FORM               134
 #define IDD_DLG_BODY_MULTIPART          134
 #define IDD_DIALOG_KEY_TEXT_VALUE       136
 #define IDD_DIALOG_KEY_VALUE_EXT        137
@@ -27,9 +26,11 @@
 #define IDC_BTN_BROSWER                 1008
 #define IDC_CHECK1                      1009
 #define IDC_CHK_IS_FILE                 1009
+#define IDC_CHK_ENABLE                  1009
 #define IDC_EDIT1                       1010
 #define IDC_EDIT_BODY_RAW               1010
 #define IDC_EDIT_FILE_PATH              1010
+#define IDC_CHK_ENABLE2                 1010
 #define IDC_LIST_QUERYS                 1011
 #define IDC_STATIC_NAME                 1012
 #define IDC_STATIC_PARAM_VALUE          1013

@@ -21,6 +21,41 @@ DlgQueryParams::~DlgQueryParams()
 {
 }
 
+std::vector<std::pair<CString, CString>> DlgQueryParams::GetQueryParams()
+{
+	std::vector<std::pair<CString, CString>> ret;
+	int nCount = m_queryParams.GetItemCount();
+	for (int i = 0; i < nCount; i++)
+	{
+		CItemKeyTextValue* item = dynamic_cast<CItemKeyTextValue*>(m_queryParams.GetCtrl(i, 0));
+		if (!item)
+			continue;
+		if (!item->IsEnable())
+			continue;
+		auto kv = item->GetKeyValue();
+		ret.push_back(kv);
+	}
+	return ret;
+}
+
+void DlgQueryParams::Clear()
+{
+	m_queryParams.DeleteAllItems();
+}
+
+void DlgQueryParams::AddQueryParam(const CString& key, const CString& value)
+{
+	int nRow = m_queryParams.InsertItem(m_queryParams.GetItemCount(), _T(""));
+	CItemKeyTextValue* pItemKV = new CItemKeyTextValue();
+	pItemKV->Create(CItemKeyTextValue::IDD, &m_queryParams);
+	pItemKV->SetKeyValue(key, value);
+	CRect rc;
+	pItemKV->GetWindowRect(rc);
+	m_queryParams.SetColumnWidth(0, rc.Width());
+	m_queryParams.SetRowHeight(rc.Height());
+	m_queryParams.SetItemEx(nRow, 0, pItemKV);
+}
+
 void DlgQueryParams::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
@@ -49,13 +84,5 @@ END_MESSAGE_MAP()
 
 void DlgQueryParams::OnBnClickedBtnAddQueryParam()
 {
-	int nRow = m_queryParams.InsertItem(m_queryParams.GetItemCount(), _T(""));
-	CItemKeyTextValue* pItemKV = new CItemKeyTextValue();
-	pItemKV->m_rowIdx = nRow;
-	pItemKV->Create(CItemKeyTextValue::IDD, &m_queryParams);
-	CRect rc;
-	pItemKV->GetWindowRect(rc);
-	m_queryParams.SetColumnWidth(0, rc.Width());
-	m_queryParams.SetRowHeight(rc.Height());
-	m_queryParams.SetItemEx(nRow, 0, pItemKV);
+	AddQueryParam(_T(""), _T(""));
 }

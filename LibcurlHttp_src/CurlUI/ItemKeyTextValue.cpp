@@ -14,7 +14,6 @@ IMPLEMENT_DYNAMIC(CItemKeyTextValue, CDialogEx)
 
 CItemKeyTextValue::CItemKeyTextValue(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_DIALOG_KEY_TEXT_VALUE, pParent)
-	, m_rowIdx(-1)
 {
 
 }
@@ -23,9 +22,40 @@ CItemKeyTextValue::~CItemKeyTextValue()
 {
 }
 
+bool CItemKeyTextValue::IsEnable()
+{
+	return m_chkEnable.GetCheck() == TRUE;
+}
+
+std::pair<CString, CString> CItemKeyTextValue::GetKeyValue()
+{
+	CString key, value;
+	m_editKey.GetWindowText(key);
+	m_editValue.GetWindowText(value);
+	return std::make_pair(key, value);
+}
+
+void CItemKeyTextValue::SetKeyValue(const CString& key, const CString& value)
+{
+	m_editKey.SetWindowText(key);
+	m_editValue.SetWindowText(value);
+}
+
 void CItemKeyTextValue::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_CHK_ENABLE, m_chkEnable);
+	DDX_Control(pDX, IDC_EDIT_QUERY_KEY, m_editKey);
+	DDX_Control(pDX, IDC_EDIT2, m_editValue);
+}
+
+BOOL CItemKeyTextValue::OnInitDialog()
+{
+	BOOL res = __super::OnInitDialog();
+
+	m_chkEnable.SetCheck(TRUE);
+
+	return res;
 }
 
 

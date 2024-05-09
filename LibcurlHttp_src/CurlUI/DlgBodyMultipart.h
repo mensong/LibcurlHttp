@@ -14,6 +14,9 @@ public:
 	CDlgBodyMultipart(CWnd* pParent = nullptr);   // 标准构造函数
 	virtual ~CDlgBodyMultipart();
 
+	//<<key, <value, isFile>>>
+	std::vector<std::pair<CString, std::pair<CString, bool>>> GetValues();
+
 // 对话框数据
 	enum { IDD = IDD_DLG_BODY_MULTIPART };
 

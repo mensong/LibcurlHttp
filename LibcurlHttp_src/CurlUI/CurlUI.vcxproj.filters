@@ -16,6 +16,15 @@
     <Filter Include="CCustomListCtrl">
       <UniqueIdentifier>{cba85b88-abcd-4057-b63d-c48ddb2c5a3b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="URL">
+      <UniqueIdentifier>{3917f0b2-6da9-4f72-89e2-58a2f5810280}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pystring">
+      <UniqueIdentifier>{b00e9f4c-4aae-4eb4-80cf-9ac4c9780249}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Convert">
+      <UniqueIdentifier>{1ff2cf4f-0e4c-4182-9749-148fa270d16e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CurlUI.h">
@@ -72,6 +81,18 @@
     <ClInclude Include="DlgBodyFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\HttpHelper\url.hpp">
+      <Filter>URL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pystring\pystring.h">
+      <Filter>pystring</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpHelper\Convertor.h">
+      <Filter>Convert</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HttpHelper\UrlCoding.h">
+      <Filter>URL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CurlUI.cpp">
@@ -118,6 +139,21 @@
     </ClCompile>
     <ClCompile Include="DlgBodyFile.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\url.cpp">
+      <Filter>URL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pystring\pystring.cpp">
+      <Filter>pystring</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\Convertor.cpp">
+      <Filter>Convert</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\win_iconv.cpp">
+      <Filter>Convert</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HttpHelper\UrlCoding.cpp">
+      <Filter>URL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -14,7 +14,6 @@ IMPLEMENT_DYNAMIC(CItemKeyValueExt, CDialogEx)
 
 CItemKeyValueExt::CItemKeyValueExt(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_DIALOG_KEY_VALUE_EXT, pParent)
-	, m_rowIdx(-1)
 {
 
 }
@@ -23,11 +22,46 @@ CItemKeyValueExt::~CItemKeyValueExt()
 {
 }
 
+bool CItemKeyValueExt::IsEnable()
+{
+	return m_chkEnable.GetCheck() == TRUE;
+}
+
+bool CItemKeyValueExt::IsFile()
+{
+	return m_btnIsFile.GetCheck() == TRUE;
+}
+
+std::pair<CString, CString> CItemKeyValueExt::GetKeyValue()
+{
+	CString key, value;
+	m_editKey.GetWindowText(key);
+	m_editValue.GetWindowText(value);
+	return std::make_pair(key, value);
+}
+
+void CItemKeyValueExt::SetKeyValue(const CString& key, const CString& value)
+{
+	m_editKey.SetWindowText(key);
+	m_editValue.SetWindowText(value);
+}
+
 void CItemKeyValueExt::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_CHK_IS_FILE, m_btnIsFile);
 	DDX_Control(pDX, IDC_EDIT2, m_editValue);
+	DDX_Control(pDX, IDC_CHK_ENABLE2, m_chkEnable);
+	DDX_Control(pDX, IDC_EDIT_QUERY_KEY, m_editKey);
+}
+
+BOOL CItemKeyValueExt::OnInitDialog()
+{
+	BOOL res = __super::OnInitDialog();
+
+	m_chkEnable.SetCheck(TRUE);
+
+	return res;
 }
 
 

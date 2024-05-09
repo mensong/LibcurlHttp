@@ -6,7 +6,7 @@
 #include "afxdialogex.h"
 #include "DlgBodyMultipart.h"
 #include "ItemKeyValueExt.h"
-
+#include "ItemKeyValueExt.h"
 
 // CDlgBodyMultipart 对话框
 
@@ -20,6 +20,27 @@ CDlgBodyMultipart::CDlgBodyMultipart(CWnd* pParent /*=nullptr*/)
 
 CDlgBodyMultipart::~CDlgBodyMultipart()
 {
+}
+
+std::vector<std::pair<CString, std::pair<CString, bool>>> CDlgBodyMultipart::GetValues()
+{
+	std::vector<std::pair<CString, std::pair<CString, bool>>> ret;
+	int nCount = m_formData.GetItemCount();
+	for (int i = 0; i < nCount; i++)
+	{
+		CItemKeyValueExt* item = dynamic_cast<CItemKeyValueExt*>(m_formData.GetCtrl(i, 0));
+		if (!item)
+			continue;
+		if (!item->IsEnable())
+			continue;
+		std::pair<CString, std::pair<CString, bool>> v;
+		auto kv = item->GetKeyValue();
+		v.first = kv.first;
+		v.second.first = kv.second;
+		v.second.second = item->IsFile();
+		ret.push_back(v);
+	}
+	return ret;
 }
 
 void CDlgBodyMultipart::DoDataExchange(CDataExchange* pDX)
@@ -52,7 +73,6 @@ void CDlgBodyMultipart::OnBnClickedBtnAddQueryParam()
 {
 	int nRow = m_formData.InsertItem(m_formData.GetItemCount(), _T(""));
 	CItemKeyValueExt* pItemKV = new CItemKeyValueExt();
-	pItemKV->m_rowIdx = nRow;
 	pItemKV->Create(CItemKeyValueExt::IDD, &m_formData);
 	CRect rc;
 	pItemKV->GetWindowRect(rc);

@@ -22,6 +22,41 @@ DlgHeader::~DlgHeader()
 {
 }
 
+std::vector<std::pair<CString, CString>> DlgHeader::GetHeaders()
+{
+	std::vector<std::pair<CString, CString>> ret;
+	int nCount = m_header.GetItemCount();
+	for (int i = 0; i < nCount; i++)
+	{
+		CItemKeyTextValue* item = dynamic_cast<CItemKeyTextValue*>(m_header.GetCtrl(i, 0));
+		if (!item)
+			continue;
+		if (!item->IsEnable())
+			continue;
+		auto kv = item->GetKeyValue();
+		ret.push_back(kv);
+	}
+	return ret;
+}
+
+void DlgHeader::Clear()
+{
+	m_header.DeleteAllItems();
+}
+
+void DlgHeader::AddHeader(const CString& key, const CString& value)
+{
+	int nRow = m_header.InsertItem(m_header.GetItemCount(), _T(""));
+	CItemKeyTextValue* pItemKV = new CItemKeyTextValue();
+	pItemKV->Create(CItemKeyTextValue::IDD, &m_header);
+	pItemKV->SetKeyValue(key, value);
+	CRect rc;
+	pItemKV->GetWindowRect(rc);
+	m_header.SetColumnWidth(0, rc.Width());
+	m_header.SetRowHeight(rc.Height());
+	m_header.SetItemEx(nRow, 0, pItemKV);
+}
+
 void DlgHeader::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
@@ -52,7 +87,6 @@ void DlgHeader::OnBnClickedBtnAddHeader()
 {
 	int nRow = m_header.InsertItem(m_header.GetItemCount(), _T(""));
 	CItemKeyTextValue* pItemKV = new CItemKeyTextValue();
-	pItemKV->m_rowIdx = nRow;
 	pItemKV->Create(CItemKeyTextValue::IDD, &m_header);
 	CRect rc;
 	pItemKV->GetWindowRect(rc);

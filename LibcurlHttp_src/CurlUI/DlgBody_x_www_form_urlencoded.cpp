@@ -52,7 +52,6 @@ void CDlgBody_x_www_form_urlencoded::OnBnClickedBtnAdd()
 {
 	int nRow = m_bodyData.InsertItem(m_bodyData.GetItemCount(), _T(""));
 	CItemKeyTextValue* pItemKV = new CItemKeyTextValue();
-	pItemKV->m_rowIdx = nRow;
 	pItemKV->Create(CItemKeyTextValue::IDD, &m_bodyData);
 	CRect rc;
 	pItemKV->GetWindowRect(rc);

@@ -16,15 +16,24 @@ public:
 	virtual ~CCurlUIDlg();
 
 // 对话框数据
-#ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_CURLUI_DIALOG };
-#endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
 	template<class TPage>
 	void addPage(const CString& pageName);
+
+	CString generateUrlByQueryParams(const CString& srcUrl);
+	void refreshQueryParams();
+	std::vector<std::pair<CString, CString>> getHeaders();
+	
+	static int _PROGRESS_CALLBACK(
+		double downloadTotal, double downloadNow,
+		double uploadTotal, double uploadNow,
+		void* userData);
+
+	void dumpResponse(LibcurlHttp* http);
 
 // 实现
 protected:
@@ -50,6 +59,7 @@ public:
 	std::vector<CDialogEx*> m_vctPages;
 	CTabCtrl m_tabParams;
 	afx_msg void OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnEnChangeEditUrl();
 };
 
 template<class TPage>

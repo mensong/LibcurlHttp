@@ -9,16 +9,32 @@
 #include "Md5.h"
 #include "..\pystring\pystring.h"
 
-
-int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData)
+int PROGRESS_CALLBACK(double downloadTotal, double downloadNow,
+	double uploadTotal, double uploadNow, void* userData)
 {
-	if (dltotal != 0)
+	//<upload position, download position>
+	std::pair<COORD, COORD>* outputPos = (std::pair<COORD, COORD>*)userData;
+	if (!outputPos)
+		return 0;
+
+	if (uploadTotal != 0)
 	{
 		COORD coord;
-		coord.X = 0; coord.Y = 0;
+		coord.X = outputPos->first.X;
+		coord.Y = outputPos->first.Y;
+		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+		
+		printf("¡ü%.0f/%.0f = %d%%\n", uploadNow, uploadTotal, (int)((uploadNow / uploadTotal) * 100));
+	}
+
+	if (downloadTotal != 0)
+	{
+		COORD coord;
+		coord.X = outputPos->second.X; 
+		coord.Y = outputPos->second.Y;
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 
-		printf("%.2f/%.2f = %d%%\n", dlnow, dltotal, (int)((dlnow / dltotal) * 100));
+		printf("¡ý%.0f/%.0f = %d%%\n", downloadNow, downloadTotal, (int)((downloadNow / downloadTotal) * 100));
 	}
 	return 0;
 }
@@ -112,23 +128,22 @@ int main(int argc, char** argv)
 	//}
 	//std::wcout << ws.c_str() << std::endl;
 
-	//HTTP_CLIENT::Ins().setProgress(PROGRESS_CALLBACK, NULL);
-	//int code = HTTP_CLIENT::Ins().download("https://down12.wsyhn.com/app/yinghuaxuexiaomoniqi.apk", NULL, NULL);
-
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
-	//HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
+	std::pair<COORD, COORD> progressPos;
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+	progressPos.first = csbi.dwCursorPosition;
+	csbi.dwCursorPosition.Y += 1;
+	progressPos.second = csbi.dwCursorPosition;
+	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, &progressPos);
+
 	//char downloadedFileName[MAX_PATH];
 	//HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//", downloadedFileName);
-	
-	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UID_", "1683766301063faec713a-1cbb-40ef-9baa-9886570eb00c1683766301063");
-	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_UserName_", "liaomp2");
-	//HTTP_CLIENT::Ins().setRequestHeader(http, "__TokenAuthorization_Function_", "PDM-Server");
 
-	//std::string filename = http->UrlUTF8Encode("se.zip");
-	//MultipartField mf(NULL, 0, "E:\\se.zip", NULL, NULL, NULL);
-	//int httpCode = http->postMultipart("http://127.0.0.1/upload/", &mf, 1);
-	//mf.Release();
+	std::string filename = http->UrlUTF8Encode("1.mp5");
+	MultipartField mf(NULL, 0, "D:\\1.mp5", NULL, "file", NULL);
+	int httpCode = http->postMultipart("http://10.71.50.21/upload/", &mf, 1);
 	//int len = 0;
 	//const char* body = http->getBody(len);
 	//std::string sBody = http->UTF8ToAnsi(body);
@@ -174,7 +189,7 @@ int main(int argc, char** argv)
 	std::cout << "http code=" << httpCode << std::endl;
 	std::cout << "body=" << sBody << std::endl;
 #endif
-		
+
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 
     return 0;

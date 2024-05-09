@@ -20,3 +20,7 @@
 /LibcurlHttp_src/*.sdf
 /LibcurlHttp_src/CurlUI/x64
 /LibcurlHttp_src/CurlUI/*.aps
+/LibcurlHttp_src/libcurl
+/LibcurlHttp_src/CurlUI/tmp
+/LibcurlHttp_src/LibcurlHttp/tmp
+/LibcurlHttp_src/Test/tmp

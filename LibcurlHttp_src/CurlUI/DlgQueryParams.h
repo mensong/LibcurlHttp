@@ -2,6 +2,7 @@
 #include "afxdialogex.h"
 #include "ListCtrlCustom.h"
 #include "CtrlScale.h"
+#include <vector>
 
 // DlgQueryParams 对话框
 
@@ -15,6 +16,10 @@ public:
 
 // 对话框数据
 	enum { IDD = IDD_DLG_QUERYPARAMS };
+
+	std::vector<std::pair<CString, CString>> GetQueryParams();
+	void Clear();
+	void AddQueryParam(const CString& key, const CString& value);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
