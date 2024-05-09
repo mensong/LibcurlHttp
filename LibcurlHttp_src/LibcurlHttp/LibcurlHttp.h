@@ -215,14 +215,27 @@ typedef struct MultipartField
 			mimeType = NULL;
 		}
 	}
+
+	void Fill(
+		const char* contenxtData, int contenxtDataSize,
+		const char* filePath,
+		const char* fileName,
+		const char* multipartName,
+		const char* mimeType)
+	{
+		new (this) MultipartField(
+			contenxtData, contenxtDataSize,
+			filePath,
+			fileName,
+			multipartName,
+			mimeType);
+	}
 } MultipartField;
 
-//进度回调原型 int PROGRESS_CALLBACK(double dltotal, double dlnow, double ultotal, double ulnow, void* userData);
-typedef int(*FN_PROGRESS_CALLBACK)(
-	double dltotal,
-	double dlnow,
-	double ultotal,
-	double ulnow,
+//进度回调原型
+typedef int (*FN_PROGRESS_CALLBACK)(
+	double downloadTotal, double downloadNow,
+	double uploadTotal, double uploadNow,
 	void* userData);
 
 class LibcurlHttp

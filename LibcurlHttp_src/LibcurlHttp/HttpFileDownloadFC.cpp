@@ -20,9 +20,11 @@ void HttpFileDownloadFC::SetProgress(FN_PROGRESS_CALLBACK progressCallback, void
 	m_userData = userData;
 }
 
-int HttpFileDownloadFC::OnProgress(double dltotal, double dlnow, double ultotal, double ulnow)
+int HttpFileDownloadFC::OnProgress(
+	double downloadTotal, double downloadNow,
+	double uploadTotal, double uploadNow)
 {
 	if (m_progressCallback)
-		return m_progressCallback(dltotal, dlnow, ultotal, ulnow, m_userData);
+		return m_progressCallback(downloadTotal, downloadNow, uploadTotal, uploadNow, m_userData);
 	return 0;
 }

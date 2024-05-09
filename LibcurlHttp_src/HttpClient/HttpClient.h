@@ -101,12 +101,16 @@ public:
 
 protected:
 	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte);
-	virtual int OnProgress(double dltotal, double dlnow, double ultotal, double ulnow);
+	virtual int OnProgress(
+		double downloadTotal, double downloadNow,
+		double uploadTotal, double uploadNow);
 	virtual void OnDone(CURLcode code);
 
 protected:
 	static size_t _WriteDataCallback(void* pBuffer, size_t nSize, size_t nMemByte, void* pParam);
-	static int _ProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
+	static int _ProgressCallback(void * userData, 
+		double downloadTotal, double downloadNow, 
+		double uploadTotal, double uploadNow);
 	static size_t _HeaderCallback(void *data, size_t size, size_t nmemb, void *userdata);
 
 protected:

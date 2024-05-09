@@ -459,7 +459,9 @@ bool HttpClient::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
 	return true;
 }
 
-int HttpClient::OnProgress(double dltotal, double dlnow, double ultotal, double ulnow)
+int HttpClient::OnProgress(
+	double downloadTotal, double downloadNow,
+	double uploadTotal, double uploadNow)
 {
 	return 0;
 }
@@ -479,12 +481,16 @@ size_t HttpClient::_WriteDataCallback(void* pBuffer, size_t nSize, size_t nMemBy
 	return 0;
 }
 
-int HttpClient::_ProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+int HttpClient::_ProgressCallback(void * userData, 
+	double downloadTotal, double downloadNow, 
+	double uploadTotal, double uploadNow)
 {
-	HttpClient* _THIS = (HttpClient*)clientp;
+	HttpClient* _THIS = (HttpClient*)userData;
 	if (!_THIS)
 		return 0;
-	return _THIS->OnProgress(dltotal, dlnow, ultotal, ulnow);
+	return _THIS->OnProgress(
+		downloadTotal, downloadNow, 
+		uploadTotal, uploadNow);
 }
 
 size_t HttpClient::_HeaderCallback(void *data, size_t size, size_t nmemb, void *userdata)

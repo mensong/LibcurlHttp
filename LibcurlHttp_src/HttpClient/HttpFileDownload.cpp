@@ -41,15 +41,23 @@ bool HttpFileDownload::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
 	return (nWrite == nSize * nMemByte);
 }
 
-int HttpFileDownload::OnProgress(double dltotal, double dlnow, double ultotal, double ulnow)
+int HttpFileDownload::OnProgress(
+	double downloadTotal, double downloadNow,
+	double uploadTotal, double uploadNow)
 {
-	/*if (dltotal > -0.1 && dltotal < 0.1)
-		return 0;
-
-	int nPos = (int)((dlnow / dltotal) * 100);
-	//通知进度条更新下载进度
-	::PostMessage(hDlgWnd, WM_USER + 110, nPos, 0);
-	*/
+	//if (uploadTotal != 0)
+	//{
+	//	int nPos = (int)((uploadNow / uploadTotal) * 100);
+	//	//通知进度条更新上传进度
+	//	::PostMessage(hDlgWnd, WM_USER + 110, nPos, 0);
+	//}
+	//if (downloadTotal != 0)
+	//{
+	//	int nPos = (int)((downloadNow / downloadTotal) * 100);
+	//	//通知进度条更新下载进度
+	//	::PostMessage(hDlgWnd, WM_USER + 111, nPos, 0);
+	//}
+	
 	return 0;
 }
 
