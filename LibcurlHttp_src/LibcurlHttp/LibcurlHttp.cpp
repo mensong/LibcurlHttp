@@ -201,19 +201,19 @@ public:
 		return post(url, sContet.c_str(), (int)sContet.size());
 	}
 
-	virtual int postForm_a(const char* url, ...) override
+	virtual int postMultipart_a(const char* url, ...) override
 	{
 		va_list argv;
 		va_start(argv, url);
 
-		int code = postForm_b(url, argv);
+		int code = postMultipart_b(url, argv);
 
 		va_end(argv);
 
 		return code;
 	}
 	
-	virtual int postForm_b(const char* url, va_list argv) override
+	virtual int postMultipart_b(const char* url, va_list argv) override
 	{
 		HttpClientFC httpClient;
 
@@ -264,11 +264,14 @@ public:
 		return res;
 	}
 	
-	virtual int postMultipart(const char* url, MultipartField** multipartDataArr, int nCountMultipartData) override
+	virtual int postMultipart(const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData) override
 	{
 		HttpClientFC httpClient;
 
-		httpClient.SetMultipartFields((const MultipartField**)multipartDataArr, nCountMultipartData);
+		std::vector<MultipartField*> params;
+		for (int i = 0; i < nCountMultipartData; i++)
+			params.push_back(pMmultipartDataArr[i]);
+		httpClient.SetMultipartFields(params);
 
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
 		httpClient.SetUrl(sUrl.c_str());
@@ -293,6 +296,14 @@ public:
 
 		m_customMethod = "";
 		return m_responseCode;
+	}
+
+	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) override
+	{
+		std::vector<MultipartField*> pMmultipartDataArr;
+		for (int i = 0; i < nCountMultipartData; i++)
+			pMmultipartDataArr.push_back(&multipartDataArr[i]);
+		return postMultipart(url, pMmultipartDataArr.data(), pMmultipartDataArr.size());
 	}
 
 	virtual void setRequestHeader(const char* key, const char* value) override
@@ -347,6 +358,11 @@ public:
 		return m_responseCode;
 	}
 	
+	virtual int putData(const char* url, const char* data, size_t dataLen) override
+	{
+		return putData(url, (const unsigned char*)data, dataLen);
+	}
+
 	virtual int putData(const char* url, const unsigned char* data, size_t dataLen) override
 	{
 		HttpClientFC httpClient;
@@ -718,21 +734,31 @@ LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* loc
 	return http->download(url, localFileName, downloadedFileName);
 }
 
-LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...)
+LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData)
+{
+	return http->postMultipart(url, pMmultipartDataArr, nCountMultipartData);
+}
+
+LIBCURLHTTP_API int postMultipartA(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData)
+{
+	return http->postMultipart(url, multipartDataArr, nCountMultipartData);
+}
+
+LIBCURLHTTP_API int postMultipart_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);
 
-	int ret = http->postForm_b(url, argv);
+	int ret = http->postMultipart_b(url, argv);
 
 	va_end(argv);
 
 	return ret;
 }
 
-LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField** multipartDataArr, int nCountMultipartData)
+LIBCURLHTTP_API int postMultipart_b(LibcurlHttp* http, const char* url, va_list argv)
 {
-	return http->postMultipart(url, multipartDataArr, nCountMultipartData);
+	return http->postMultipart_b(url, argv);
 }
 
 LIBCURLHTTP_API int putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen)

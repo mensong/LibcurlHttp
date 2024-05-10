@@ -101,9 +101,9 @@ int main(int argc, char** argv)
 
 	//HTTP_CLIENT::Ins().setCustomMethod("ILOVEYOU");
 
-	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", NULL, 1, "f1", "v1", 1, "f2", "v2", NULL);
-	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", "idgcs-min.zip", 1, "f1", "v1", 1, "f2", "v2", NULL);
-	//HTTP_CLIENT::Ins().postForm_a("http://10.224.104.3/com1", 1, "f1", "v1", 1, "f2", "v2", NULL);
+	//HTTP_CLIENT::Ins().postMultipart_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", NULL, 1, "f1", "v1", 1, "f2", "v2", NULL);
+	//HTTP_CLIENT::Ins().postMultipart_a("http://10.224.104.3/com1", 2, "file", "C:\\Users\\Administrator\\Desktop\\idgcs-min.zip", "idgcs-min.zip", 1, "f1", "v1", 1, "f2", "v2", NULL);
+	//HTTP_CLIENT::Ins().postMultipart_a("http://10.224.104.3/com1", 1, "f1", "v1", 1, "f2", "v2", NULL);
 	//HTTP_CLIENT::Ins().get("https://www.baidu.com");
 
 	/*
@@ -140,8 +140,8 @@ int main(int argc, char** argv)
 	progressPos.second = csbi.dwCursorPosition;
 	HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, &progressPos);
 
-	//char downloadedFileName[MAX_PATH];
-	//HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//", downloadedFileName);
+	char downloadedFileName[MAX_PATH];
+	HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:/1/\\2/3\\4\\//", downloadedFileName);
 
 	//std::string filename = http->UrlUTF8Encode("Test.exe");
 	//MultipartField* mf = new MultipartField(NULL, 0, "Test.exe", filename.c_str(), "file", NULL);
@@ -155,8 +155,29 @@ int main(int argc, char** argv)
 	//const char* body = http->getBody(len);
 	//std::string sBody = http->UTF8ToAnsi(body);
 
-	http->putData("http://192.168.77.1/upload", (const unsigned char*)"test", 4);
-	http->putFile("http://192.168.77.1/upload", "Test.exe");
+	//http->putData("http://192.168.77.1/upload", (const unsigned char*)"test", 4);
+	//http->putFile("http://192.168.77.1/upload", "Test.exe");
+
+#if 0
+	MultipartField arrMF[3];
+	arrMF[0].Fill("test1", 5, NULL, NULL, "file1", NULL);
+	arrMF[1].Fill("test2", 5, NULL, NULL, "file2", NULL);
+	arrMF[2].Fill("test3", 5, NULL, NULL, "file3", NULL);
+	http->postMultipart("http://127.0.0.1:8080/post", arrMF, 3);
+	std::vector<MultipartField*> pp;
+	pp.push_back(&arrMF[0]);
+	pp.push_back(&arrMF[1]);
+	pp.push_back(&arrMF[2]);
+	http->postMultipart("http://127.0.0.1:8080/post", pp.data(), pp.size());
+	MultipartField* pp1[3];
+	pp1[0] = &arrMF[0];
+	pp1[1] = &arrMF[1];
+	pp1[2] = &arrMF[2];
+	http->postMultipart("http://127.0.0.1:8080/post", pp1, 3);
+
+	http->putData("http://127.0.0.1:8080/put", "test", 4);
+	http->putFile("http://127.0.0.1:8080/put", "Test.exe");
+#endif
 
 #if 0
 	std::string url(1024, 0);

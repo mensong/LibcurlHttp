@@ -208,15 +208,14 @@ public:
 	virtual int post_b(const char* url, va_list argv) = 0;
 
 	//提交multipart
-	virtual int postMultipart(const char* url, MultipartField** multipartDataArr, int nCountMultipartData) = 0;
+	virtual int postMultipart(const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData) = 0;
+	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) = 0;
 	// url, fieldtype1(1:普通字段；2:file字段), fieldname1, fieldvalue1, mimeType, [如果fieldtype1==2则存在]fileName1,    
 	//      fieldtype2(1:普通字段；2:file字段), fieldname2, fieldvalue2, mimeType, [如果fieldtype2==2则存在]fileName2, 
 	//      ……, NULL(最后必须使用NULL结束)
-	virtual int postForm_a(const char* url, ...) = 0;
-	virtual int postForm_b(const char* url, va_list argv) = 0;
-
+	virtual int postMultipart_a(const char* url, ...) = 0;
+	virtual int postMultipart_b(const char* url, va_list argv) = 0;
 	
-		
 	//下载网络文件到本地
 	// localFileName - 想要保存到的文件路径或目录，如果是目录则会在此目录下根据Content-Disposition的描述自动获取文件名或生成一个临时文件名
 	// downloadedFileName - 实际保存到的文件路径，char outFileName[MAX_PATH]; download("https://123.com", NULL, outFileName);
@@ -224,6 +223,7 @@ public:
 	
 	//put
 	virtual int putData(const char* url, const unsigned char* data, size_t dataLen) = 0;
+	virtual int putData(const char* url, const char* data, size_t dataLen) = 0;
 	virtual int putFile(const char* url, const char* filePath) = 0;
 	
 	//获得提交后的body内容
@@ -273,12 +273,17 @@ LIBCURLHTTP_API void setDecompressIfGzip(LibcurlHttp* http, bool decompressIfGzi
 
 LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url);
 LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...);
+
 LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
 LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...);
+
 LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL);
 
-LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField** multipartDataArr, int nCountMultipartData);
-LIBCURLHTTP_API int postForm_a(LibcurlHttp* http, const char* url, ...);
+//pMultipartDataArr = new MultipartField*[X]; or std::vector<MultipartField*> arr; postMultipart(http, url, arr.data(), arr.size());
+LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData);
+LIBCURLHTTP_API int postMultipartA(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
+LIBCURLHTTP_API int postMultipart_a(LibcurlHttp* http, const char* url, ...);
+LIBCURLHTTP_API int postMultipart_b(LibcurlHttp* http, const char* url, va_list argv);
 
 LIBCURLHTTP_API int putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen);
 LIBCURLHTTP_API int putFile(LibcurlHttp* http, const char* url, const char* filePath);
@@ -324,8 +329,10 @@ public:
 	typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
 	typedef int(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
 	typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName, char* downloadedFileName);
-	typedef int(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField** multipartDataArr, int nCountMultipartData);
-	typedef int(*FN_postForm_a)(LibcurlHttp* http, const char* url, ...);
+	typedef int(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData);
+	typedef int(*FN_postMultipartA)(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
+	typedef int(*FN_postMultipart_a)(LibcurlHttp* http, const char* url, ...);
+	typedef int(*FN_postMultipart_b)(LibcurlHttp* http, const char* url, va_list argv);
 	typedef const char* (*FN_getBody)(LibcurlHttp* http, int& len);
 	typedef int(*FN_getCode)(LibcurlHttp* http);
 	typedef int(*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
@@ -368,7 +375,9 @@ public:
 		DEF_PROC(hDll, post_a);
 		DEF_PROC(hDll, download);
 		DEF_PROC(hDll, postMultipart);
-		DEF_PROC(hDll, postForm_a);
+		DEF_PROC(hDll, postMultipartA);
+		DEF_PROC(hDll, postMultipart_a);
+		DEF_PROC(hDll, postMultipart_b);
 		DEF_PROC(hDll, getBody);
 		DEF_PROC(hDll, getCode);
 		DEF_PROC(hDll, getResponseHeaderKeysCount);
@@ -403,7 +412,9 @@ public:
 	FN_post_a				post_a;
 	FN_download				download;
 	FN_postMultipart		postMultipart;
-	FN_postForm_a			postForm_a;
+	FN_postMultipartA		postMultipartA;
+	FN_postMultipart_a		postMultipart_a;
+	FN_postMultipart_b		postMultipart_b;
 	FN_getBody				getBody;
 	FN_getCode				getCode;
 	FN_getResponseHeaderKeysCount getResponseHeaderKeysCount;

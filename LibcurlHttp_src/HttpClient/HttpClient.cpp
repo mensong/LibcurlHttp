@@ -51,8 +51,6 @@ HttpClient::HttpClient()
 	, m_putData(NULL)
 	, m_putDataLen(0)
 	, m_decompressIfGzip(true)
-	, m_multipartFields(NULL)
-	, m_multipartFieldsSize(0)
 {
 	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
 }
@@ -255,7 +253,7 @@ bool HttpClient::Do()
 				break;//return
 			}
 		}
-		else if (m_multipartFieldsSize > 0 && m_multipartFields)
+		else if (m_multipartFields.size() > 0)
 		{
 			sMethod = GetCustomMethod("POST");
 			curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -263,7 +261,7 @@ bool HttpClient::Do()
 			mime = curl_mime_init(curl);
 			if (mime)
 			{
-				for (int i = 0; i < m_multipartFieldsSize; ++i)
+				for (int i = 0; i < m_multipartFields.size(); ++i)
 				{
 					const MultipartField* mpf = m_multipartFields[i];
 					curl_mimepart *part = curl_mime_addpart(mime);
