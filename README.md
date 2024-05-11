@@ -1,35 +1,6 @@
 # LibcurlHttp
-libcur在windows上的封装。
+libcurl在windows上的封装。
 
 # Quickstart/Demo
-```CPP
-LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
-HTTP_CLIENT::Ins().setProgress(http, PROGRESS_CALLBACK, NULL);
-HTTP_CLIENT::Ins().download(http, "https://sm.myapp.com/original/Download/LeapFTPSetup_3.1.0.50.exe", "E:\\my\\app");
-```
-
-# Table of Contents
-
-- [Project Title](#project-title)
-- [Quickstart/Demo](#quickstartdemo)
-- [Table of Contents](#table-of-contents)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Development](#development)
-- [Contribute](#contribute)
-- [License](#license)
-
-# Installation
-[(Back to top)](#table-of-contents)
-
-# Usage
-[(Back to top)](#table-of-contents)
-
-# Development
-[(Back to top)](#table-of-contents)
-
-# Contribute
-[(Back to top)](#table-of-contents)
-
-# License
-[(Back to top)](#table-of-contents)
+编译https://github.com/mensong/CURL_onekey_build.git，并把结果拷贝到：LibcurlHttp_src/libcurl（libs2022.zip是已经编译好的vs2022的curl MT静态库，直接解压即用）
+[Test.cpp]([https://github.com/mensong/QJS/blob/master/Test/Test.cpp](https://github.com/mensong/LibcurlHttp/blob/master/LibcurlHttp_src/Test/Test.cpp) "Test.cpp")
