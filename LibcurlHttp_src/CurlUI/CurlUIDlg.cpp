@@ -24,6 +24,7 @@
 #endif
 
 
+
 // CCurlUIDlg 对话框
 
 
@@ -419,7 +420,7 @@ void CCurlUIDlg::OnEnChangeEditUrl()
 
 void CCurlUIDlg::OnNMClickbtnsetting(NMHDR* pNMHDR, LRESULT* pResult)
 {
-	
+	m_setting.DoModal();
 
 	*pResult = 0;
 }

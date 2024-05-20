@@ -6,6 +6,7 @@
 #include "..\LibcurlHttp\LibcurlHttp.h"
 #include <vector>
 #include "CtrlScale.h"
+#include "CDlgSetting.h"
 
 // CCurlUIDlg 对话框
 class CCurlUIDlg : public CDialogEx
@@ -58,6 +59,8 @@ public:
 
 	std::vector<CDialogEx*> m_vctPages;
 	CTabCtrl m_tabParams;
+	CDlgSetting m_setting;
+
 	afx_msg void OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnEnChangeEditUrl();
 	afx_msg void OnNMClickbtnsetting(NMHDR* pNMHDR, LRESULT* pResult);

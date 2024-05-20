@@ -133,7 +133,8 @@ bool HttpClient::Do()
 		// 设置301、302跳转跟随location
 		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, m_autoRedirect ? 1L : 0L);
 		// 设置重定向的最大次数
-		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, m_maxRedirect);
+		if (m_autoRedirect && m_maxRedirect > 0)
+			curl_easy_setopt(curl, CURLOPT_MAXREDIRS, m_maxRedirect);
 
 		//多线程情况下必须开启
 		//https://curl.se/libcurl/c/threadsafe.html
