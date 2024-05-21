@@ -2,7 +2,7 @@
 #include "afxdialogex.h"
 #include "ListCtrlCustom.h"
 #include "CtrlScale.h"
-
+#include <string>
 
 // CDlgBody_x_www_form_urlencoded 对话框
 
@@ -19,6 +19,11 @@ public:
 
 	CListCtrlCustom m_bodyData;
 	CCtrlScale m_scale;
+
+	//<<key, value>>
+	std::vector<std::pair<CString, CString>> GetValues();
+	//
+	std::string GetTextValue();
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持

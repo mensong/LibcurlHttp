@@ -14,23 +14,31 @@ class LibcurlHttpImp
 {
 public:
 	LibcurlHttpImp()
-		: m_timeout(0)
-		, m_responseCode(0)
+		: m_httpClient(NULL)
+		, m_timeout(0)
 		, m_progressCallback(NULL)
 		, m_progressUserData(NULL)
 		, m_autoRedirect(true)
 		, m_maxRedirect(5)
 		, m_decompressIfGzip(true)
 	{
-		ms_urlEncodeEscape.insert('/');
-		ms_urlEncodeEscape.insert(':');
-		ms_urlEncodeEscape.insert('%');
-		ms_urlEncodeEscape.insert('&');
-		ms_urlEncodeEscape.insert('?');
-		ms_urlEncodeEscape.insert('\\');
-		ms_urlEncodeEscape.insert('=');
+		m_urlEncodeEscape.insert('/');
+		m_urlEncodeEscape.insert(':');
+		m_urlEncodeEscape.insert('%');
+		m_urlEncodeEscape.insert('&');
+		m_urlEncodeEscape.insert('?');
+		m_urlEncodeEscape.insert('\\');
+		m_urlEncodeEscape.insert('=');
 
 		m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
+	}
+	~LibcurlHttpImp()
+	{
+		if (m_httpClient)
+		{
+			delete m_httpClient;
+			m_httpClient = NULL;
+		}
 	}
 
 	virtual void setTimeout(int t) override
@@ -60,33 +68,54 @@ public:
 		m_decompressIfGzip = decompressIfGzip;
 	}
 	
-	virtual int get(const char* url) override
+	virtual void setRequestHeader(const char* key, const char* value) override
 	{
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
+		if (!key || key[0] == '\0')
+			return;
+		if (!value)
+		{
+			m_requestHeaders.erase(key);
+			return;
+		}
+
+		m_requestHeaders[key] = value;
+	}
+
+	virtual void setUserAgent(const char* val) override
+	{
+		m_userAgent = val;
+	}
+
+	virtual void setCustomMethod(const char* method) override
+	{
+		m_customMethod = method;
+	}
+
+	virtual bool get(const char* url) override
+	{
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &m_urlEncodeEscape);
 		//return m_http.get(sUrl.c_str(), dealRedirect);
 
-		HttpClientFC httpClient;
-		httpClient.SetUrl(sUrl);
-		httpClient.SetTimtout(m_timeout);
-		httpClient.SetUserAgent(m_userAgent);
-		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMethod(m_customMethod);
-		httpClient.SetProgress(m_progressCallback, m_progressUserData);
-		httpClient.SetAutoRedirect(m_autoRedirect);
-		httpClient.SetMaxRedirect(m_maxRedirect);
-		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
+		HttpClientFC* httpClient = new HttpClientFC;
+		httpClient->SetUrl(sUrl);
+		httpClient->SetTimtout(m_timeout);
+		httpClient->SetUserAgent(m_userAgent);
+		httpClient->SetHeaders(m_requestHeaders);
+		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetProgress(m_progressCallback, m_progressUserData);
+		httpClient->SetAutoRedirect(m_autoRedirect);
+		httpClient->SetMaxRedirect(m_maxRedirect);
+		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
 				
-		httpClient.Do();
+		bool b = httpClient->Do();
 
-		m_responseCode = httpClient.GetHttpCode();
-		m_responseBody = httpClient.GetBody();
-		m_responseHeaders = httpClient.GetResponseHeaders();
+		setWorkingHttpClient(httpClient);
 		
 		m_customMethod = "";
-		return m_responseCode;
+		return b;
 	}	
 
-	virtual int get_a(const char* url, ...)
+	virtual bool get_a(const char* url, ...)
 	{
 		va_list argv;
 		va_start(argv, url);
@@ -98,7 +127,7 @@ public:
 		return code;
 	}
 
-	virtual int get_b(const char* url, va_list argv)
+	virtual bool get_b(const char* url, va_list argv)
 	{
 		std::string sContet;
 
@@ -131,40 +160,39 @@ public:
 		return get(uri.c_str());
 	}
 
-	virtual int post(const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded") override
+	virtual bool post(const char* url, const char* content, size_t contentLen,
+		const char* contentType = "application/x-www-form-urlencoded") override
 	{
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &m_urlEncodeEscape);
 
-		HttpClientFC httpClient;
-		httpClient.SetUrl(sUrl);
-		httpClient.SetTimtout(m_timeout);
-		httpClient.SetUserAgent(m_userAgent);
-		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetHeader("Content-Type", contentType);
-		httpClient.SetCustomMethod(m_customMethod);
-		httpClient.SetProgress(m_progressCallback, m_progressUserData);
-		httpClient.SetAutoRedirect(m_autoRedirect);
-		httpClient.SetMaxRedirect(m_maxRedirect);
-		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
+		HttpClientFC* httpClient = new HttpClientFC;
+		httpClient->SetUrl(sUrl);
+		httpClient->SetTimtout(m_timeout);
+		httpClient->SetUserAgent(m_userAgent);
+		httpClient->SetHeaders(m_requestHeaders);
+		httpClient->SetHeader("Content-Type", contentType);
+		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetProgress(m_progressCallback, m_progressUserData);
+		httpClient->SetAutoRedirect(m_autoRedirect);
+		httpClient->SetMaxRedirect(m_maxRedirect);
+		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
 
 		std::string sData(content, contentLen);
-		httpClient.SetNormalPostData(sData);
+		httpClient->SetNormalPostData(sData);
 		if (contentLen == 0)
 		{//防止post空内容时出现411错误
-			httpClient.SetHeader("Content-Length", "0");
+			httpClient->SetHeader("Content-Length", "0");
 		}
 
-		httpClient.Do();
+		bool b = httpClient->Do();
 
-		m_responseCode = httpClient.GetHttpCode();
-		m_responseBody = httpClient.GetBody();
-		m_responseHeaders = httpClient.GetResponseHeaders();
+		setWorkingHttpClient(httpClient);
 
 		m_customMethod = "";
-		return m_responseCode;
+		return b;
 	}
 	
-	virtual int post_a(const char* url, ...) override
+	virtual bool post_a(const char* url, ...) override
 	{
 		va_list argv;
 		va_start(argv, url);
@@ -176,7 +204,7 @@ public:
 		return code;
 	}
 
-	virtual int post_b(const char* url, va_list argv)
+	virtual bool post_b(const char* url, va_list argv)
 	{
 		std::string sContet;
 
@@ -198,10 +226,10 @@ public:
 				sContet += std::string("&") + key + std::string("=") + val;
 		} while (1);
 
-		return post(url, sContet.c_str(), (int)sContet.size());
+		return post(url, sContet.c_str(), sContet.size());
 	}
 
-	virtual int postMultipart_a(const char* url, ...) override
+	virtual bool postMultipart_a(const char* url, ...) override
 	{
 		va_list argv;
 		va_start(argv, url);
@@ -213,10 +241,8 @@ public:
 		return code;
 	}
 	
-	virtual int postMultipart_b(const char* url, va_list argv) override
+	virtual bool postMultipart_b(const char* url, va_list argv) override
 	{
-		HttpClientFC httpClient;
-
 		int fieldType = 0;
 		char* key = NULL;
 		char* val = NULL;
@@ -246,7 +272,7 @@ public:
 
 			MultipartField* multipart = new MultipartField();
 			if (fieldType == 2)
-				multipart->Fill(NULL, NULL, val, fileName, key, mimeType);
+				multipart->Fill(NULL, 0, val, fileName, key, mimeType);
 			else
 				multipart->Fill(val, strlen(val), NULL, NULL, key, mimeType);
 			
@@ -264,41 +290,39 @@ public:
 		return res;
 	}
 	
-	virtual int postMultipart(const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData) override
+	virtual bool postMultipart(const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData) override
 	{
-		HttpClientFC httpClient;
+		HttpClientFC* httpClient = new HttpClientFC;
 
 		std::vector<MultipartField*> params;
 		for (int i = 0; i < nCountMultipartData; i++)
 			params.push_back(pMmultipartDataArr[i]);
-		httpClient.SetMultipartFields(params);
+		httpClient->SetMultipartFields(params);
 
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		httpClient.SetUrl(sUrl.c_str());
-		httpClient.SetTimtout(m_timeout);
-		httpClient.SetUserAgent(m_userAgent);
-		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMethod(m_customMethod);
-		httpClient.SetProgress(m_progressCallback, m_progressUserData);
-		httpClient.SetAutoRedirect(m_autoRedirect);
-		httpClient.SetMaxRedirect(m_maxRedirect);
-		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &m_urlEncodeEscape);
+		httpClient->SetUrl(sUrl.c_str());
+		httpClient->SetTimtout(m_timeout);
+		httpClient->SetUserAgent(m_userAgent);
+		httpClient->SetHeaders(m_requestHeaders);
+		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetProgress(m_progressCallback, m_progressUserData);
+		httpClient->SetAutoRedirect(m_autoRedirect);
+		httpClient->SetMaxRedirect(m_maxRedirect);
+		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
 		if (nCountMultipartData == 0)
 		{//防止post空内容时出现411错误
-			httpClient.SetHeader("Content-Length", "0");
+			httpClient->SetHeader("Content-Length", "0");
 		}
 
-		httpClient.Do();
+		bool b = httpClient->Do();
 
-		m_responseCode = httpClient.GetHttpCode();
-		m_responseBody = httpClient.GetBody();
-		m_responseHeaders = httpClient.GetResponseHeaders();
+		setWorkingHttpClient(httpClient);
 
 		m_customMethod = "";
-		return m_responseCode;
+		return b;
 	}
 
-	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) override
+	virtual bool postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) override
 	{
 		std::vector<MultipartField*> pMmultipartDataArr;
 		for (int i = 0; i < nCountMultipartData; i++)
@@ -306,152 +330,146 @@ public:
 		return postMultipart(url, pMmultipartDataArr.data(), pMmultipartDataArr.size());
 	}
 
-	virtual void setRequestHeader(const char* key, const char* value) override
+	virtual bool download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) override
 	{
-		if (!key || key[0] == '\0')
-			return;
-		if (!value)
-		{
-			m_requestHeaders.erase(key);
-			return;
-		}
+		HttpFileDownloadFC* downloader = new HttpFileDownloadFC;
 
-		m_requestHeaders[key] = value;
-	}
-
-	virtual void setUserAgent(const char* val) override
-	{
-		m_userAgent = val;
-	}
-
-	virtual void setCustomMethod(const char* method) override
-	{
-		m_customMethod = method;
-	}
-
-	virtual int download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) override
-	{
-		HttpFileDownloadFC downloader;
-
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		downloader.SetUrl(sUrl.c_str());
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &m_urlEncodeEscape);
+		downloader->SetUrl(sUrl.c_str());
 		if (localFileName)
-			downloader.SetFile(localFileName);
-		downloader.SetTimtout(m_timeout);
-		downloader.SetUserAgent(m_userAgent);
-		downloader.SetHeaders(m_requestHeaders);
-		downloader.SetCustomMethod(m_customMethod);
-		downloader.SetProgress(m_progressCallback, m_progressUserData);
-		downloader.SetAutoRedirect(m_autoRedirect);
-		downloader.SetMaxRedirect(m_maxRedirect);
+			downloader->SetFile(localFileName);
+		downloader->SetTimtout(m_timeout);
+		downloader->SetUserAgent(m_userAgent);
+		downloader->SetHeaders(m_requestHeaders);
+		downloader->SetCustomMethod(m_customMethod);
+		downloader->SetProgress(m_progressCallback, m_progressUserData);
+		downloader->SetAutoRedirect(m_autoRedirect);
+		downloader->SetMaxRedirect(m_maxRedirect);
 		
-		downloader.Do();
+		bool b = downloader->Do();
 
-		m_responseCode = downloader.GetHttpCode();
-		m_responseHeaders = downloader.GetResponseHeaders();
+		setWorkingHttpClient(downloader);
 
 		m_customMethod = "";
 
 		if (downloadedFileName)
-			strcpy(downloadedFileName, downloader.GetFile().c_str());
+			strcpy(downloadedFileName, downloader->GetFile().c_str());
 
-		return m_responseCode;
+		return b;
 	}
 	
-	virtual int putData(const char* url, const char* data, size_t dataLen) override
+	virtual bool putData(const char* url, const char* data, size_t dataLen) override
 	{
 		return putData(url, (const unsigned char*)data, dataLen);
 	}
 
-	virtual int putData(const char* url, const unsigned char* data, size_t dataLen) override
+	virtual bool putData(const char* url, const unsigned char* data, size_t dataLen) override
 	{
-		HttpClientFC httpClient;
+		HttpClientFC* httpClient = new HttpClientFC;
 
 	
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		httpClient.SetUrl(sUrl.c_str());
-		httpClient.SetTimtout(m_timeout);
-		httpClient.SetUserAgent(m_userAgent);
-		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMethod(m_customMethod);
-		httpClient.SetProgress(m_progressCallback, m_progressUserData);
-		httpClient.SetAutoRedirect(m_autoRedirect);
-		httpClient.SetMaxRedirect(m_maxRedirect);
-		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &m_urlEncodeEscape);
+		httpClient->SetUrl(sUrl.c_str());
+		httpClient->SetTimtout(m_timeout);
+		httpClient->SetUserAgent(m_userAgent);
+		httpClient->SetHeaders(m_requestHeaders);
+		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetProgress(m_progressCallback, m_progressUserData);
+		httpClient->SetAutoRedirect(m_autoRedirect);
+		httpClient->SetMaxRedirect(m_maxRedirect);
+		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
 
 		if (dataLen == 0)
 		{//防止post空内容时出现411错误
-			httpClient.SetHeader("Content-Length", "0");
+			httpClient->SetHeader("Content-Length", "0");
 		}
 		else
 		{
-			httpClient.SetPutData(data, dataLen);
+			httpClient->SetPutData(data, dataLen);
 		}
 
-		httpClient.Do();
+		bool b = httpClient->Do();
 
-		m_responseCode = httpClient.GetHttpCode();
-		m_responseBody = httpClient.GetBody();
-		m_responseHeaders = httpClient.GetResponseHeaders();
+		setWorkingHttpClient(httpClient);
 
 		m_customMethod = "";
-		return m_responseCode;
+		return b;
 	}
 
-	virtual int putFile(const char* url, const char* filePath) override
+	virtual bool putFile(const char* url, const char* filePath) override
 	{
 		if (!filePath)
 		{
 			return CURLE_BAD_FUNCTION_ARGUMENT;
 		}
 
-		HttpClientFC httpClient;
+		HttpClientFC* httpClient = new HttpClientFC;
 
-		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &ms_urlEncodeEscape);
-		httpClient.SetUrl(sUrl.c_str());
-		httpClient.SetTimtout(m_timeout);
-		httpClient.SetUserAgent(m_userAgent);
-		httpClient.SetHeaders(m_requestHeaders);
-		httpClient.SetCustomMethod(m_customMethod);
-		httpClient.SetProgress(m_progressCallback, m_progressUserData);
-		httpClient.SetAutoRedirect(m_autoRedirect);
-		httpClient.SetMaxRedirect(m_maxRedirect);
-		httpClient.SetPutFile(filePath);
-		httpClient.SetDecompressIfGzip(m_decompressIfGzip);
+		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &m_urlEncodeEscape);
+		httpClient->SetUrl(sUrl.c_str());
+		httpClient->SetTimtout(m_timeout);
+		httpClient->SetUserAgent(m_userAgent);
+		httpClient->SetHeaders(m_requestHeaders);
+		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetProgress(m_progressCallback, m_progressUserData);
+		httpClient->SetAutoRedirect(m_autoRedirect);
+		httpClient->SetMaxRedirect(m_maxRedirect);
+		httpClient->SetPutFile(filePath);
+		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
 
-		httpClient.Do();
+		bool b = httpClient->Do();
 
-		m_responseCode = httpClient.GetHttpCode();
-		m_responseBody = httpClient.GetBody();
-		m_responseHeaders = httpClient.GetResponseHeaders();
+		setWorkingHttpClient(httpClient);
 
 		m_customMethod = "";
-		return m_responseCode;
+		return b;
 	}
 
-	virtual const char* getBody(int& len) override
+	virtual const char* getBody(size_t& len) override
 	{
-		const std::string& sBody = m_responseBody;
-		len = (int)sBody.size();
+		if (!hasWorkingHttpClient())
+		{
+			len = 0;
+			return NULL;
+		}
+		const std::string& sBody = m_httpClient->GetBody();
+		len = sBody.size();
 		return sBody.c_str();
 	}
 
 	virtual int getCode() override
 	{
-		return m_responseCode;
+		if (!hasWorkingHttpClient())
+		{
+			return -1;
+		}
+		return m_httpClient->GetCode();
 	}
 
 	virtual int getResponseHeaderKeysCount() override
 	{
-		return (int)m_responseHeaders.size();
+		if (!hasWorkingHttpClient())
+		{
+			return 0;
+		}
+		return (int)m_httpClient->GetResponseHeaders().size();
 	}
 
 	virtual const char* getResponseHeaderKey(int i) override
 	{
-		if (i >= (int)m_responseHeaders.size())
+		if (!hasWorkingHttpClient())
+		{
+			return "";
+		}
+
+		if (i < 0)
 			return "";
 
-		ResponseHeaderFields::iterator it = m_responseHeaders.begin();
+		const ResponseHeaderFields& responseHeaders = m_httpClient->GetResponseHeaders();
+		if (i >= (int)responseHeaders.size())
+			return "";
+
+		ResponseHeaderFields::const_iterator it = responseHeaders.cbegin();
 		while (i--)
 		{
 			++it;
@@ -462,19 +480,26 @@ public:
 
 	virtual int getResponseHeadersCount(const char* key, bool ignoreCase = false) override
 	{
+		if (!hasWorkingHttpClient())
+		{
+			return 0;
+		}
+
 		if (!key)
 		{
 			return 0;
 		}
 
-		ResponseHeaderFields::iterator itFinder;
+		const ResponseHeaderFields& responseHeaders = m_httpClient->GetResponseHeaders();
+
+		ResponseHeaderFields::const_iterator itFinder;
 		if (!ignoreCase)
 		{
-			itFinder = m_responseHeaders.find(key);
+			itFinder = responseHeaders.find(key);
 		}
 		else
 		{
-			for (itFinder = m_responseHeaders.begin(); itFinder != m_responseHeaders.end(); ++itFinder)
+			for (itFinder = responseHeaders.cbegin(); itFinder != responseHeaders.cend(); ++itFinder)
 			{
 				if (pystring::equal(itFinder->first, key, true))
 				{
@@ -483,7 +508,7 @@ public:
 			}
 		}
 		
-		if (itFinder == m_responseHeaders.end())
+		if (itFinder == responseHeaders.cend())
 		{
 			return 0;
 		}
@@ -492,19 +517,26 @@ public:
 
 	virtual const char* getResponseHeader(const char* key, int i, bool ignoreCase = false) override
 	{
+		if (!hasWorkingHttpClient())
+		{
+			return "";
+		}
+
 		if (!key)
 		{
 			return "";
 		}
 
-		ResponseHeaderFields::iterator itFinder;
+		const ResponseHeaderFields& responseHeaders = m_httpClient->GetResponseHeaders();
+
+		ResponseHeaderFields::const_iterator itFinder;
 		if (!ignoreCase)
 		{
-			itFinder = m_responseHeaders.find(key);
+			itFinder = responseHeaders.find(key);
 		}
 		else
 		{
-			for (itFinder = m_responseHeaders.begin(); itFinder != m_responseHeaders.end(); ++itFinder)
+			for (itFinder = responseHeaders.cbegin(); itFinder != responseHeaders.cend(); ++itFinder)
 			{
 				if (pystring::equal(itFinder->first, key, true))
 				{
@@ -513,7 +545,7 @@ public:
 			}
 		}
 
-		if (itFinder == m_responseHeaders.end())
+		if (itFinder == responseHeaders.cend())
 		{
 			return "";
 		}
@@ -619,6 +651,22 @@ public:
 		return m_convertBuffA.c_str();
 	}
 
+protected:
+	void setWorkingHttpClient(HttpClient* httpClient)
+	{
+		if (m_httpClient)
+		{
+			delete m_httpClient;
+			m_httpClient = NULL;
+		}
+
+		m_httpClient = httpClient;
+	}
+	bool hasWorkingHttpClient()
+	{
+		return m_httpClient != NULL;
+	}
+
 private:
 	int m_timeout;
 	std::string m_userAgent;
@@ -630,11 +678,12 @@ private:
 
 	bool m_decompressIfGzip;
 
-	int m_responseCode;
-	std::string m_responseBody;
-	ResponseHeaderFields m_responseHeaders;
+	//int m_responseCode;
+	//std::string m_responseBody;
+	//ResponseHeaderFields m_responseHeaders;
+	HttpClient* m_httpClient;
 
-	std::set<char> ms_urlEncodeEscape;
+	std::set<char> m_urlEncodeEscape;
 
 	FN_PROGRESS_CALLBACK m_progressCallback;
 	void* m_progressUserData;
@@ -695,12 +744,12 @@ LIBCURLHTTP_API void setDecompressIfGzip(LibcurlHttp* http, bool decompressIfGzi
 	http->setDecompressIfGzip(decompressIfGzip);
 }
 
-LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url)
+LIBCURLHTTP_API bool get(LibcurlHttp* http, const char* url)
 {
 	return http->get(url);
 }
 
-LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...)
+LIBCURLHTTP_API bool get_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);
@@ -712,12 +761,13 @@ LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...)
 	return ret;
 }
 
-LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType /*= "application/x-www-form-urlencoded"*/)
+LIBCURLHTTP_API bool post(LibcurlHttp* http, const char* url, const char* content, size_t contentLen,
+	const char* contentType /*= "application/x-www-form-urlencoded"*/)
 {
 	return http->post(url, content, contentLen, contentType);
 }
 
-LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...)
+LIBCURLHTTP_API bool post_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);
@@ -729,22 +779,22 @@ LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...)
 	return ret;
 }
 
-LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName/*=NULL*/, char* downloadedFileName/* = NULL*/)
+LIBCURLHTTP_API bool download(LibcurlHttp* http, const char* url, const char* localFileName/*=NULL*/, char* downloadedFileName/* = NULL*/)
 {
 	return http->download(url, localFileName, downloadedFileName);
 }
 
-LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData)
+LIBCURLHTTP_API bool postMultipart(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData)
 {
 	return http->postMultipart(url, pMmultipartDataArr, nCountMultipartData);
 }
 
-LIBCURLHTTP_API int postMultipartA(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData)
+LIBCURLHTTP_API bool postMultipartA(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData)
 {
 	return http->postMultipart(url, multipartDataArr, nCountMultipartData);
 }
 
-LIBCURLHTTP_API int postMultipart_a(LibcurlHttp* http, const char* url, ...)
+LIBCURLHTTP_API bool postMultipart_a(LibcurlHttp* http, const char* url, ...)
 {
 	va_list argv;
 	va_start(argv, url);
@@ -756,22 +806,22 @@ LIBCURLHTTP_API int postMultipart_a(LibcurlHttp* http, const char* url, ...)
 	return ret;
 }
 
-LIBCURLHTTP_API int postMultipart_b(LibcurlHttp* http, const char* url, va_list argv)
+LIBCURLHTTP_API bool postMultipart_b(LibcurlHttp* http, const char* url, va_list argv)
 {
 	return http->postMultipart_b(url, argv);
 }
 
-LIBCURLHTTP_API int putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen)
+LIBCURLHTTP_API bool putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen)
 {
 	return http->putData(url, data, dataLen);
 }
 
-LIBCURLHTTP_API int putFile(LibcurlHttp* http, const char* url, const char* filePath)
+LIBCURLHTTP_API bool putFile(LibcurlHttp* http, const char* url, const char* filePath)
 {
 	return http->putFile(url, filePath);
 }
 
-LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len)
+LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, size_t& len)
 {
 	return http->getBody(len);
 }

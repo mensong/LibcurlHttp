@@ -20,7 +20,7 @@ typedef enum HttpDoErrorCode
 typedef struct MultipartField
 {
 	char* contenxtData;	//提交的是直接指定的内容，该字段有内容时，filePath字段无效
-	int contenxtDataSize;
+	size_t contenxtDataSize;
 
 	char* filePath;		//提交的是文件，contenxtData有内容时，该字段无效
 	char* fileName;		//指定文件名
@@ -39,7 +39,7 @@ typedef struct MultipartField
 	}
 
 	MultipartField(
-		const char* contenxtData, int contenxtDataSize, 
+		const char* contenxtData, size_t contenxtDataSize, 
 		const char* filePath, 
 		const char* fileName, 
 		const char* multipartName, 
@@ -139,7 +139,7 @@ typedef struct MultipartField
 	}
 
 	void Fill(
-		const char* contenxtData, int contenxtDataSize,
+		const char* contenxtData, size_t contenxtDataSize,
 		const char* filePath,
 		const char* fileName,
 		const char* multipartName,
@@ -192,42 +192,42 @@ public:
 	virtual void setDecompressIfGzip(bool decompressIfGzip) = 0;
 
 	//http get
-	virtual int get(const char* url) = 0;
+	virtual bool get(const char* url) = 0;
 	//http get
 	//不定参数：const char* key1, const char* val1, const char* key2, const char* val2, ……, NULL
 	//  不定参数为成对的形式出现，并且后面一定有一个NULL标志不定参数的结束。
-	virtual int get_a(const char* url, ...) = 0;
-	virtual int get_b(const char* url, va_list argv) = 0;
+	virtual bool get_a(const char* url, ...) = 0;
+	virtual bool get_b(const char* url, va_list argv) = 0;
 
 	//http post
-	virtual int post(const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded") = 0;
+	virtual bool post(const char* url, const char* content, size_t contentLen, const char* contentType = "application/x-www-form-urlencoded") = 0;
 	//http post
 	//不定参数：const char* key1, const char* val1, const char* key2, const char* val2, ……, NULL
 	//  不定参数为成对的形式出现，并且后面一定有一个NULL标志不定参数的结束。
-	virtual int post_a(const char* url, ...) = 0;
-	virtual int post_b(const char* url, va_list argv) = 0;
+	virtual bool post_a(const char* url, ...) = 0;
+	virtual bool post_b(const char* url, va_list argv) = 0;
 
 	//提交multipart
-	virtual int postMultipart(const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData) = 0;
-	virtual int postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) = 0;
+	virtual bool postMultipart(const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData) = 0;
+	virtual bool postMultipart(const char* url, MultipartField* multipartDataArr, int nCountMultipartData) = 0;
 	// url, fieldtype1(1:普通字段；2:file字段), fieldname1, fieldvalue1, mimeType, [如果fieldtype1==2则存在]fileName1,    
 	//      fieldtype2(1:普通字段；2:file字段), fieldname2, fieldvalue2, mimeType, [如果fieldtype2==2则存在]fileName2, 
 	//      ……, NULL(最后必须使用NULL结束)
-	virtual int postMultipart_a(const char* url, ...) = 0;
-	virtual int postMultipart_b(const char* url, va_list argv) = 0;
+	virtual bool postMultipart_a(const char* url, ...) = 0;
+	virtual bool postMultipart_b(const char* url, va_list argv) = 0;
 	
 	//下载网络文件到本地
 	// localFileName - 想要保存到的文件路径或目录，如果是目录则会在此目录下根据Content-Disposition的描述自动获取文件名或生成一个临时文件名
 	// downloadedFileName - 实际保存到的文件路径，char outFileName[MAX_PATH]; download("https://123.com", NULL, outFileName);
-	virtual int download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) = 0;
+	virtual bool download(const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL) = 0;
 	
 	//put
-	virtual int putData(const char* url, const unsigned char* data, size_t dataLen) = 0;
-	virtual int putData(const char* url, const char* data, size_t dataLen) = 0;
-	virtual int putFile(const char* url, const char* filePath) = 0;
+	virtual bool putData(const char* url, const unsigned char* data, size_t dataLen) = 0;
+	virtual bool putData(const char* url, const char* data, size_t dataLen) = 0;
+	virtual bool putFile(const char* url, const char* filePath) = 0;
 	
 	//获得提交后的body内容
-	virtual const char* getBody(int& len) = 0;
+	virtual const char* getBody(size_t& len) = 0;
 	//获得提交后的返回code
 	virtual int getCode() = 0;
 	//获得Response headers
@@ -271,24 +271,24 @@ LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect);
 LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect);
 LIBCURLHTTP_API void setDecompressIfGzip(LibcurlHttp* http, bool decompressIfGzip);
 
-LIBCURLHTTP_API int get(LibcurlHttp* http, const char* url);
-LIBCURLHTTP_API int get_a(LibcurlHttp* http, const char* url, ...);
+LIBCURLHTTP_API bool get(LibcurlHttp* http, const char* url);
+LIBCURLHTTP_API bool get_a(LibcurlHttp* http, const char* url, ...);
 
-LIBCURLHTTP_API int post(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType = "application/x-www-form-urlencoded");
-LIBCURLHTTP_API int post_a(LibcurlHttp* http, const char* url, ...);
+LIBCURLHTTP_API bool post(LibcurlHttp* http, const char* url, const char* content, size_t contentLen, const char* contentType = "application/x-www-form-urlencoded");
+LIBCURLHTTP_API bool post_a(LibcurlHttp* http, const char* url, ...);
 
-LIBCURLHTTP_API int download(LibcurlHttp* http, const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL);
+LIBCURLHTTP_API bool download(LibcurlHttp* http, const char* url, const char* localFileName = NULL, char* downloadedFileName = NULL);
 
 //pMultipartDataArr = new MultipartField*[X]; or std::vector<MultipartField*> arr; postMultipart(http, url, arr.data(), arr.size());
-LIBCURLHTTP_API int postMultipart(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData);
-LIBCURLHTTP_API int postMultipartA(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
-LIBCURLHTTP_API int postMultipart_a(LibcurlHttp* http, const char* url, ...);
-LIBCURLHTTP_API int postMultipart_b(LibcurlHttp* http, const char* url, va_list argv);
+LIBCURLHTTP_API bool postMultipart(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData);
+LIBCURLHTTP_API bool postMultipartA(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
+LIBCURLHTTP_API bool postMultipart_a(LibcurlHttp* http, const char* url, ...);
+LIBCURLHTTP_API bool postMultipart_b(LibcurlHttp* http, const char* url, va_list argv);
 
-LIBCURLHTTP_API int putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen);
-LIBCURLHTTP_API int putFile(LibcurlHttp* http, const char* url, const char* filePath);
+LIBCURLHTTP_API bool putData(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen);
+LIBCURLHTTP_API bool putFile(LibcurlHttp* http, const char* url, const char* filePath);
 
-LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, int& len);
+LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, size_t& len);
 LIBCURLHTTP_API int getCode(LibcurlHttp* http);
 LIBCURLHTTP_API int getResponseHeaderKeysCount(LibcurlHttp* http);
 LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i);
@@ -324,16 +324,18 @@ public:
 	typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
 	typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
 	typedef void(*FN_setDecompressIfGzip)(LibcurlHttp* http, bool decompressIfGzip);
-	typedef int(*FN_get)(LibcurlHttp* http, const char* url);
-	typedef int(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
-	typedef int(*FN_post)(LibcurlHttp* http, const char* url, const char* content, int contentLen, const char* contentType);
-	typedef int(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
-	typedef int(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName, char* downloadedFileName);
-	typedef int(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData);
-	typedef int(*FN_postMultipartA)(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
-	typedef int(*FN_postMultipart_a)(LibcurlHttp* http, const char* url, ...);
-	typedef int(*FN_postMultipart_b)(LibcurlHttp* http, const char* url, va_list argv);
-	typedef const char* (*FN_getBody)(LibcurlHttp* http, int& len);
+	typedef bool(*FN_get)(LibcurlHttp* http, const char* url);
+	typedef bool(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
+	typedef bool(*FN_post)(LibcurlHttp* http, const char* url, const char* content, size_t contentLen, const char* contentType);
+	typedef bool(*FN_post_a)(LibcurlHttp* http, const char* url, ...);
+	typedef bool(*FN_download)(LibcurlHttp* http, const char* url, const char* localFileName, char* downloadedFileName);
+	typedef bool(*FN_postMultipart)(LibcurlHttp* http, const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData);
+	typedef bool(*FN_postMultipartA)(LibcurlHttp* http, const char* url, MultipartField* multipartDataArr, int nCountMultipartData);
+	typedef bool(*FN_postMultipart_a)(LibcurlHttp* http, const char* url, ...);
+	typedef bool(*FN_postMultipart_b)(LibcurlHttp* http, const char* url, va_list argv);
+	typedef bool (*FN_putData)(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen);
+	typedef bool (*FN_putFile)(LibcurlHttp* http, const char* url, const char* filePath);
+	typedef const char* (*FN_getBody)(LibcurlHttp* http, size_t& len);
 	typedef int(*FN_getCode)(LibcurlHttp* http);
 	typedef int(*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
 	typedef const char* (*FN_getResponseHeaderKey)(LibcurlHttp* http, int i);
@@ -378,6 +380,8 @@ public:
 		DEF_PROC(hDll, postMultipartA);
 		DEF_PROC(hDll, postMultipart_a);
 		DEF_PROC(hDll, postMultipart_b);
+		DEF_PROC(hDll, putData);
+		DEF_PROC(hDll, putFile);
 		DEF_PROC(hDll, getBody);
 		DEF_PROC(hDll, getCode);
 		DEF_PROC(hDll, getResponseHeaderKeysCount);
@@ -415,6 +419,8 @@ public:
 	FN_postMultipartA		postMultipartA;
 	FN_postMultipart_a		postMultipart_a;
 	FN_postMultipart_b		postMultipart_b;
+	FN_putData				putData;
+	FN_putFile				putFile;
 	FN_getBody				getBody;
 	FN_getCode				getCode;
 	FN_getResponseHeaderKeysCount getResponseHeaderKeysCount;

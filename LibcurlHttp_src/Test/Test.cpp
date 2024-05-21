@@ -45,7 +45,7 @@ void dumpCode(LibcurlHttp* http)
 void dumpBody(LibcurlHttp* http, bool utf8 = true)
 {
 #define MAX_PRINT 4096
-	int len = 0;
+	size_t len = 0;
 	std::string sBody = http->getBody(len);
 	if (sBody.size() > MAX_PRINT)
 		sBody[MAX_PRINT] = '\0';
@@ -54,6 +54,7 @@ void dumpBody(LibcurlHttp* http, bool utf8 = true)
 		wprintf(http->UTF8ToWidebyte(sBody.c_str()));
 	else
 		printf(sBody.c_str());
+	printf("\n");
 }
 
 int main(int argc, char** argv)
@@ -79,8 +80,8 @@ int main(int argc, char** argv)
 	progressPos.second = csbi.dwCursorPosition;
 	http->setProgress(PROGRESS_CALLBACK, &progressPos);
 
-#if 0
-	http->get("http://www.baidu.com");
+#if 1
+	http->get("https://www.baidu.com");
 	dumpBody(http);
 #endif
 

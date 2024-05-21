@@ -36,7 +36,7 @@ void CDlgSetting::initProperties()
 		new CMFCPropertyGridProperty(
 			_T("网络超时"),
 			_itot(m_setting.timeout, buff, 10),
-			_T("单位：毫秒，0表示网络不超时"));
+			_T("单位：秒，0表示网络不超时"));
 	m_property.AddProperty(pTimeoutItem);
 
 	CMFCPropertyGridProperty* pUserAgentItem =

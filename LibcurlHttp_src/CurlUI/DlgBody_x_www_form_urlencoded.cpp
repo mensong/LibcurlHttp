@@ -6,6 +6,7 @@
 #include "afxdialogex.h"
 #include "DlgBody_x_www_form_urlencoded.h"
 #include "ItemKeyTextValue.h"
+#include "../LibcurlHttp/LibcurlHttp.h"
 
 
 // CDlgBody_x_www_form_urlencoded 对话框
@@ -20,6 +21,48 @@ CDlgBody_x_www_form_urlencoded::CDlgBody_x_www_form_urlencoded(CWnd* pParent /*=
 
 CDlgBody_x_www_form_urlencoded::~CDlgBody_x_www_form_urlencoded()
 {
+}
+
+std::vector<std::pair<CString, CString>> CDlgBody_x_www_form_urlencoded::GetValues()
+{
+	std::vector<std::pair<CString, CString>> ret;
+	int nCount = m_bodyData.GetItemCount();
+	for (int i = 0; i < nCount; i++)
+	{
+		CItemKeyTextValue* item = dynamic_cast<CItemKeyTextValue*>(m_bodyData.GetCtrl(i, 0));
+		if (!item)
+			continue;
+		if (!item->IsEnable())
+			continue;
+		std::pair<CString, CString> v;
+		auto kv = item->GetKeyValue();
+		v.first = kv.first;
+		v.second = kv.second;
+		ret.push_back(v);
+	}
+	return ret;
+}
+
+std::string CDlgBody_x_www_form_urlencoded::GetTextValue()
+{
+	std::string content;
+
+	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
+
+	auto values = GetValues();
+	for (size_t i = 0; i < values.size(); i++)
+	{
+		std::string key = CW2A(values[i].first);
+		std::string value = CW2A(values[i].second);
+		if (!content.empty())
+			content += "&";
+		content += http->UrlUTF8Encode(key.c_str());
+		content += "=";
+		content += http->UrlUTF8Encode(value.c_str());
+	}
+
+	HTTP_CLIENT::Ins().ReleaseHttp(http);
+	return content;
 }
 
 void CDlgBody_x_www_form_urlencoded::DoDataExchange(CDataExchange* pDX)

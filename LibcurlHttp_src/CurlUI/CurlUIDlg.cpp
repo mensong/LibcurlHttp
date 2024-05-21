@@ -43,11 +43,11 @@ CCurlUIDlg::~CCurlUIDlg()
 	}
 	m_pageScales.clear();
 
-	for (size_t i = 0; i < m_vctPages.size(); i++)
+	for (size_t i = 0; i < m_pages.size(); i++)
 	{
-		delete m_vctPages[i];
+		delete m_pages[i];
 	}
-	m_vctPages.clear();
+	m_pages.clear();
 }
 
 void CCurlUIDlg::DoDataExchange(CDataExchange* pDX)
@@ -128,9 +128,10 @@ BOOL CCurlUIDlg::OnInitDialog()
 	addPage<CDlgBodyRaw>(_T("*Body-Raw"));
 	addPage<CDlgBodyFile>(_T("*Body-File"));
 
-	m_vctPages[0]->ShowWindow(SW_SHOW);
+	m_pages[0]->ShowWindow(SW_SHOW);
 	m_scaleTab.Init(m_tabParams.GetSafeHwnd());
 
+	m_cmbMethod.SetCurSel(0);
 	m_progress.SetRange(0, 100);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -174,7 +175,7 @@ HCURSOR CCurlUIDlg::OnQueryDragIcon()
 
 CString CCurlUIDlg::generateUrlByQueryParams(const CString& srcUrl)
 {
-	DlgQueryParams* dlg = dynamic_cast<DlgQueryParams*>(m_vctPages[0]);
+	DlgQueryParams* dlg = dynamic_cast<DlgQueryParams*>(m_pages[0]);
 	if (!dlg)
 		return CString();
 
@@ -201,7 +202,7 @@ CString CCurlUIDlg::generateUrlByQueryParams(const CString& srcUrl)
 
 void CCurlUIDlg::refreshQueryParams()
 {
-	DlgQueryParams* dlg = dynamic_cast<DlgQueryParams*>(m_vctPages[0]);
+	DlgQueryParams* dlg = dynamic_cast<DlgQueryParams*>(m_pages[0]);
 	if (!dlg)
 		return;
 	dlg->Clear();
@@ -231,7 +232,7 @@ std::vector<std::pair<CString, CString>> CCurlUIDlg::getHeaders()
 {
 	std::vector<std::pair<CString, CString>> ret;
 
-	DlgHeader* dlg = dynamic_cast<DlgHeader*>(m_vctPages[1]);
+	DlgHeader* dlg = dynamic_cast<DlgHeader*>(m_pages[1]);
 	if (!dlg)
 		return ret;
 
@@ -244,6 +245,23 @@ std::vector<std::pair<CString, CString>> CCurlUIDlg::getHeaders()
 	}
 
 	return ret;
+}
+
+void CCurlUIDlg::fillDefaultSetting(LibcurlHttp* http)
+{
+	GlobalSetting& setting = m_setting.GetSetting();
+
+	if (setting.timeout > -1)
+		http->setTimeout(setting.timeout);
+	
+	if (!setting.userAgent.IsEmpty())
+		http->setUserAgent(CW2A(setting.userAgent));
+	
+	http->setAutoRedirect(setting.autoRedirect);
+	if (setting.autoRedirect)
+		http->setMaxRedirect(setting.autoRedirectMaxCount);
+
+	http->setDecompressIfGzip(setting.gzip);
 }
 
 int CCurlUIDlg::_PROGRESS_CALLBACK(
@@ -284,10 +302,16 @@ void CCurlUIDlg::dumpResponse(LibcurlHttp* http)
 			value += pval;
 		}
 
-		headers += key + std::string(":") + value + "\r\n";
+		if (pystring::startswith(key, "HTTP/"))
+			headers = key + std::string("\r\n") + headers;
+		else
+			headers += key + std::string(":") + value + "\r\n";
 	}
-
 	m_editResponseHeader.SetWindowText(CA2W(headers.c_str()));
+
+	size_t len = 0;
+	const char* pBody = http->getBody(len);
+	m_editResponseBody.SetWindowTextW(http->UTF8ToWidebyte(pBody));
 }
 
 void CCurlUIDlg::OnBnClickedBtnRun()
@@ -308,8 +332,9 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
+	fillDefaultSetting(http);
+	http->setCustomMethod(CW2A(sMethod));
 	http->setProgress(_PROGRESS_CALLBACK, this);
-	http->setAutoRedirect(false);
 
 	for (size_t i = 0; i < headers.size(); i++)
 	{
@@ -321,17 +346,17 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	{
 	case 0:
 	{
-
+		http->get(CW2A(sUrl));
 		break;
 	}
 	case 1:
 	{
-
+		http->get(CW2A(sUrl));
 		break;
 	}
 	case 2:
 	{
-		CDlgBodyMultipart* pDlg = (CDlgBodyMultipart*)m_vctPages[curTab];
+		CDlgBodyMultipart* pDlg = (CDlgBodyMultipart*)m_pages[curTab];
 		std::vector<std::pair<CString, std::pair<CString, bool>>> values = pDlg->GetValues();
 		std::vector<MultipartField*> multiparts;
 		for (size_t i = 0; i < values.size(); i++)
@@ -363,7 +388,9 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	}
 	case 3:
 	{
-
+		CDlgBody_x_www_form_urlencoded* pDlg = (CDlgBody_x_www_form_urlencoded*)m_pages[curTab];
+		std::string content = pDlg->GetTextValue();
+		http->post(CW2A(sUrl), content.c_str(), content.size());
 		break;
 	}
 	case 4:
@@ -399,15 +426,15 @@ void CCurlUIDlg::OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = 0;
 
 	int sel = m_tabParams.GetCurSel();
-	if (sel < 0 || sel >= m_vctPages.size())
+	if (sel < 0 || sel >= m_pages.size())
 		return;
 
-	for (size_t i = 0; i < m_vctPages.size(); i++)
+	for (size_t i = 0; i < m_pages.size(); i++)
 	{
-		m_vctPages[i]->ShowWindow(SW_HIDE);
+		m_pages[i]->ShowWindow(SW_HIDE);
 	}
 
-	m_vctPages[sel]->ShowWindow(SW_SHOW);
+	m_pages[sel]->ShowWindow(SW_SHOW);
 }
 
 
@@ -421,6 +448,5 @@ void CCurlUIDlg::OnEnChangeEditUrl()
 void CCurlUIDlg::OnNMClickbtnsetting(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	m_setting.DoModal();
-
 	*pResult = 0;
 }

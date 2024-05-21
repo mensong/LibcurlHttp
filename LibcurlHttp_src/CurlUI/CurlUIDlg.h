@@ -29,6 +29,8 @@ protected:
 	void refreshQueryParams();
 	std::vector<std::pair<CString, CString>> getHeaders();
 	
+	void fillDefaultSetting(LibcurlHttp* http);
+
 	static int _PROGRESS_CALLBACK(
 		double downloadTotal, double downloadNow,
 		double uploadTotal, double uploadNow,
@@ -57,7 +59,7 @@ public:
 	CCtrlScale m_scaleTab;
 	std::vector<CCtrlScale*> m_pageScales;
 
-	std::vector<CDialogEx*> m_vctPages;
+	std::vector<CDialogEx*> m_pages;
 	CTabCtrl m_tabParams;
 	CDlgSetting m_setting;
 
@@ -82,7 +84,7 @@ inline void CCurlUIDlg::addPage(const CString& pageName)
 	m_tabParams.InsertItem(m_tabParams.GetItemCount(), pageName);
 	
 	TPage* dlg = new TPage();
-	m_vctPages.push_back(dlg);
+	m_pages.push_back(dlg);
 	dlg->Create(TPage::IDD, &m_tabParams);
 	//设置对话框1的显示位置
 	dlg->SetWindowPos(&wndTop, nX, nY, nXc, nYc, SWP_SHOWWINDOW);

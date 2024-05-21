@@ -5,7 +5,7 @@
 
 struct GlobalSetting
 {
-	int timeout = 0;
+	int timeout = 30;
 	CString userAgent = _T("LibcurlHttp");
 	bool autoRedirect = true;
 	int autoRedirectMaxCount = 3;
