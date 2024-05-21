@@ -31,6 +31,7 @@
 
 CCurlUIDlg::CCurlUIDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CURLUI_DIALOG, pParent)
+	, m_running(true)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -166,6 +167,16 @@ void CCurlUIDlg::OnPaint()
 	}
 }
 
+void CCurlUIDlg::OnOK()
+{
+}
+
+void CCurlUIDlg::OnCancel()
+{
+	m_running = false;
+	__super::OnCancel();
+}
+
 //当用户拖动最小化窗口时系统调用此函数取得光标
 //显示。
 HCURSOR CCurlUIDlg::OnQueryDragIcon()
@@ -192,8 +203,11 @@ CString CCurlUIDlg::generateUrlByQueryParams(const CString& srcUrl)
 			continue;
 		CString v = kvs[i].second;
 
-		std::string sKey = UrlCoding::UrlUTF8Encode(GL::WideByte2Ansi(k.GetString()).c_str());
-		std::string sValue = UrlCoding::UrlUTF8Encode(GL::WideByte2Ansi(v.GetString()).c_str());
+		std::string s;
+		GL::WideByte2Ansi(s, k.GetString());
+		std::string sKey = UrlCoding::UrlUTF8Encode(s.c_str());
+		GL::WideByte2Ansi(s, v.GetString());
+		std::string sValue = UrlCoding::UrlUTF8Encode(s.c_str());
 		url.add_query(sKey.c_str(), sValue.c_str());
 	}
 
@@ -213,18 +227,25 @@ void CCurlUIDlg::refreshQueryParams()
 		return;
 
 	std::string sUrl = CW2A(csUrl.GetString());
-	Url url(sUrl);
-	auto query = url.query();
-	for (size_t i = 0; i < query.size(); i++)
+	try
 	{
-		std::string k = query[i].key();
-		std::string v = query[i].val();
+		Url url(sUrl);
+		auto query = url.query();
+		for (size_t i = 0; i < query.size(); i++)
+		{
+			std::string k = query[i].key();
+			std::string v = query[i].val();
 
-		CString key, val;
-		key = CA2W(UrlCoding::UrlUTF8Decode(k.c_str()).c_str());
-		val = CA2W(UrlCoding::UrlUTF8Decode(v.c_str()).c_str());
+			CString key, val;
+			key = CA2W(UrlCoding::UrlUTF8Decode(k.c_str()).c_str());
+			val = CA2W(UrlCoding::UrlUTF8Decode(v.c_str()).c_str());
 
-		dlg->AddQueryParam(key, val);
+			dlg->AddQueryParam(key, val);
+		}
+	}
+	catch (const std::exception&)
+	{
+
 	}
 }
 
@@ -264,19 +285,36 @@ void CCurlUIDlg::fillDefaultSetting(LibcurlHttp* http)
 	http->setDecompressIfGzip(setting.gzip);
 }
 
-int CCurlUIDlg::_PROGRESS_CALLBACK(
+bool CCurlUIDlg::_PROGRESS_CALLBACK(
 	double downloadTotal, double downloadNow,
 	double uploadTotal, double uploadNow,
 	void* userData)
 {
+	MSG msg;
+	if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	{
+		::DispatchMessage(&msg);
+		::TranslateMessage(&msg);
+	}
+		
 	CCurlUIDlg* This = (CCurlUIDlg*)userData;
+
+	if (!This->m_running)
+		return false;
+
 	if (uploadTotal != 0)
 	{
 		int pos = uploadNow / uploadTotal * 100;
 		This->m_progress.SetPos(pos);
 	}
 
-	return 0;
+	if (downloadTotal != 0)
+	{
+		int pos = downloadNow / downloadTotal * 100;
+		This->m_progress.SetPos(pos);
+	}
+
+	return true;
 }
 
 void CCurlUIDlg::dumpResponse(LibcurlHttp* http)
@@ -311,7 +349,18 @@ void CCurlUIDlg::dumpResponse(LibcurlHttp* http)
 
 	size_t len = 0;
 	const char* pBody = http->getBody(len);
-	m_editResponseBody.SetWindowTextW(http->UTF8ToWidebyte(pBody));
+	int showBodyMaxLength = m_setting.GetSetting().showBodyMaxLength;
+	bool bOver = false;
+	if (showBodyMaxLength >0 && len > showBodyMaxLength)
+	{
+		len = m_setting.GetSetting().showBodyMaxLength;
+		bOver = true;
+	}
+	const wchar_t* wBody = http->UTF8ToWidebyte(pBody, len);
+	CString sBody(wBody, len);
+	if (bOver)
+		sBody += L"...<内容超出>...";
+	m_editResponseBody.SetWindowTextW(sBody);
 }
 
 void CCurlUIDlg::OnBnClickedBtnRun()
@@ -395,12 +444,24 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	}
 	case 4:
 	{
-
+		CDlgBodyRaw* pDlg = (CDlgBodyRaw*)m_pages[curTab];
+		CString bodyData = pDlg->GetData();
+		std::string sBodyData = CW2A(bodyData);
+		if (sMethod.CompareNoCase(_T("PUT")) == 0)
+		{
+			http->putData(CW2A(sUrl), sBodyData.c_str(), sBodyData.size());
+		}
+		else
+		{
+			http->post(CW2A(sUrl), sBodyData.c_str(), sBodyData.size());
+		}
 		break;
 	}
 	case 5:
 	{
-
+		CDlgBodyFile* pDlg = (CDlgBodyFile*)m_pages[curTab];
+		std::string filepath = CW2A(pDlg->GetFilePath());
+		http->putFile(CW2A(sUrl), filepath.c_str());
 		break;
 	}
 	default:
@@ -409,14 +470,6 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 
 	dumpResponse(http);
 
-	//http->post(http->WidebyteToAnsi(sUrl.GetString()), NULL, 0);
-	//int len = 0;
-	//const char* pBody = http->getBody(len);
-	//if (len > 0)
-	//{
-	//	std::wstring wBody = http->UTF8ToWidebyte(pBody);
-	//	m_editResponseBody.SetWindowText(wBody.c_str());
-	//}
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 }
 

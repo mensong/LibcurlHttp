@@ -21,6 +21,13 @@ CDlgBodyRaw::~CDlgBodyRaw()
 {
 }
 
+CString CDlgBodyRaw::GetData()
+{
+	CString data;
+	m_editBodyData.GetWindowText(data);
+	return data;
+}
+
 void CDlgBodyRaw::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);

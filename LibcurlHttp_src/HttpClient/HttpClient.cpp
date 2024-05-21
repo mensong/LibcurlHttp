@@ -52,7 +52,11 @@ HttpClient::HttpClient()
 	, m_putDataLen(0)
 	, m_decompressIfGzip(true)
 {
-	m_userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/9999.9999.9999.9999 Safari/9999.9999";
+	m_userAgent = 
+		"Mozilla/999.0 (Windows NT 999) "
+		"AppleWebKit/999.999 (KHTML, like Gecko) "
+		"Chrome/9999.9999.9999.9999 "
+		"Safari/9999.9999";
 }
 
 HttpClient::~HttpClient()
@@ -455,6 +459,32 @@ const std::vector<std::string>& HttpClient::GetResponseHeaders(const std::string
 	return itFinder->second;
 }
 
+bool HttpClient::OnHeader(const char* header)
+{
+	std::string headerKV = header;
+	size_t seperator = headerKV.find_first_of(':');
+	if (std::string::npos == seperator)
+	{
+		// roll with non seperated headers...
+		trim(headerKV);
+		if (0 == headerKV.length())
+		{
+			return true;  // blank line;
+		}
+		m_responseHeaders[header].push_back("");
+	}
+	else
+	{
+		std::string key = headerKV.substr(0, seperator);
+		trim(key);
+		std::string value = headerKV.substr(seperator + 1);
+		trim(value);
+		m_responseHeaders[key].push_back(value);
+	}
+
+	return true;
+}
+
 bool HttpClient::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
 {
 	size_t totalSize = nSize * nMemByte;
@@ -462,20 +492,35 @@ bool HttpClient::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
 	return true;
 }
 
-int HttpClient::OnProgress(
+bool HttpClient::OnProgress(
 	double downloadTotal, double downloadNow,
 	double uploadTotal, double uploadNow)
 {
-	return 0;
+	return true;
 }
 
 void HttpClient::OnDone(CURLcode code)
 {
+	
+}
 
+size_t HttpClient::_HeaderCallback(void* data, size_t size, size_t nmemb, void* userdata)
+{
+	//curl中，返回size * nmemb继续，其它则中断
+
+	HttpClient* _THIS = reinterpret_cast<HttpClient*>(userdata);
+	if (!_THIS)
+		return 0;
+	std::string header(reinterpret_cast<char*>(data), size * nmemb);
+	if (_THIS->OnHeader(header.c_str()))
+		return (size * nmemb);
+	return 0;
 }
 
 size_t HttpClient::_WriteDataCallback(void* pBuffer, size_t nSize, size_t nMemByte, void* pParam)
 {
+	//curl中，返回nSize * nMemByte继续，其它则中断
+
 	HttpClient* _THIS = (HttpClient*)pParam;
 	if (!_THIS)
 		return 0;
@@ -488,38 +533,14 @@ int HttpClient::_ProgressCallback(void * userData,
 	double downloadTotal, double downloadNow, 
 	double uploadTotal, double uploadNow)
 {
+	//curl中，返回0继续，非0则中断
+
 	HttpClient* _THIS = (HttpClient*)userData;
 	if (!_THIS)
+		return 1;
+	if (_THIS->OnProgress(downloadTotal, downloadNow, uploadTotal, uploadNow))
 		return 0;
-	return _THIS->OnProgress(
-		downloadTotal, downloadNow, 
-		uploadTotal, uploadNow);
-}
-
-size_t HttpClient::_HeaderCallback(void *data, size_t size, size_t nmemb, void *userdata)
-{
-	HttpClient* _THIS = reinterpret_cast<HttpClient*>(userdata);
-	std::string header(reinterpret_cast<char*>(data), size*nmemb);
-	size_t seperator = header.find_first_of(':');
-	if (std::string::npos == seperator)
-	{
-		// roll with non seperated headers...
-		trim(header);
-		if (0 == header.length())
-		{
-			return (size * nmemb);  // blank line;
-		}
-		_THIS->m_responseHeaders[header].push_back("");
-	}
-	else {
-		std::string key = header.substr(0, seperator);
-		trim(key);
-		std::string value = header.substr(seperator + 1);
-		trim(value);
-		_THIS->m_responseHeaders[key].push_back(value);
-	}
-
-	return (size * nmemb);
+	return 1;
 }
 
 size_t HttpClient::_put_read_file_callback(char* ptr, size_t size, size_t nmemb, void* userdata)

@@ -21,6 +21,13 @@ CDlgBodyFile::~CDlgBodyFile()
 {
 }
 
+CString CDlgBodyFile::GetFilePath()
+{
+	CString filepath;
+	m_editFilePath.GetWindowText(filepath);
+	return filepath;
+}
+
 void CDlgBodyFile::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);

@@ -16,6 +16,10 @@ public:
 	LibcurlHttpImp()
 		: m_httpClient(NULL)
 		, m_timeout(0)
+		, m_headerCallback(NULL)
+		, m_headerUserData(NULL)
+		, m_bodyCallback(NULL)
+		, m_bodyUserData(NULL)
 		, m_progressCallback(NULL)
 		, m_progressUserData(NULL)
 		, m_autoRedirect(true)
@@ -44,6 +48,18 @@ public:
 	virtual void setTimeout(int t) override
 	{
 		m_timeout = t;
+	}
+
+	virtual void setResponseHeaderCallback(FN_HEADER_CALLBACK cb, void* userData) override
+	{
+		m_headerCallback = cb;
+		m_headerUserData = userData;
+	}
+	
+	virtual void setResponseBodyCallback(FN_WRITED_CALLBACK cb, void* userData) override
+	{
+		m_bodyCallback = cb;
+		m_bodyUserData = userData;
 	}
 
 	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) override
@@ -102,6 +118,8 @@ public:
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
@@ -120,11 +138,11 @@ public:
 		va_list argv;
 		va_start(argv, url);
 
-		int code = get_b(url, argv);
+		bool b = get_b(url, argv);
 
 		va_end(argv);
 
-		return code;
+		return b;
 	}
 
 	virtual bool get_b(const char* url, va_list argv)
@@ -172,6 +190,8 @@ public:
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetHeader("Content-Type", contentType);
 		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
@@ -197,11 +217,11 @@ public:
 		va_list argv;
 		va_start(argv, url);
 
-		int code = post_b(url, argv);
+		bool b = post_b(url, argv);
 
 		va_end(argv);
 
-		return code;
+		return b;
 	}
 
 	virtual bool post_b(const char* url, va_list argv)
@@ -234,11 +254,11 @@ public:
 		va_list argv;
 		va_start(argv, url);
 
-		int code = postMultipart_b(url, argv);
+		bool b = postMultipart_b(url, argv);
 
 		va_end(argv);
 
-		return code;
+		return b;
 	}
 	
 	virtual bool postMultipart_b(const char* url, va_list argv) override
@@ -279,7 +299,7 @@ public:
 			multipartDataArr.push_back(multipart);			
 		} while (1);
 		
-		int res = postMultipart(url, multipartDataArr.data(), multipartDataArr.size());
+		bool b = postMultipart(url, multipartDataArr.data(), multipartDataArr.size());
 
 		for (size_t i = 0; i < multipartDataArr.size(); i++)
 		{
@@ -287,7 +307,7 @@ public:
 		}
 		multipartDataArr.clear();
 
-		return res;
+		return b;
 	}
 	
 	virtual bool postMultipart(const char* url, MultipartField* pMmultipartDataArr[], int nCountMultipartData) override
@@ -305,6 +325,8 @@ public:
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
@@ -342,6 +364,7 @@ public:
 		downloader->SetUserAgent(m_userAgent);
 		downloader->SetHeaders(m_requestHeaders);
 		downloader->SetCustomMethod(m_customMethod);
+		downloader->SetHeaderCallback(m_headerCallback, m_headerUserData);
 		downloader->SetProgress(m_progressCallback, m_progressUserData);
 		downloader->SetAutoRedirect(m_autoRedirect);
 		downloader->SetMaxRedirect(m_maxRedirect);
@@ -366,14 +389,15 @@ public:
 	virtual bool putData(const char* url, const unsigned char* data, size_t dataLen) override
 	{
 		HttpClientFC* httpClient = new HttpClientFC;
-
-	
+			
 		std::string sUrl = UrlCoding::UrlUTF8Encode(url, &m_urlEncodeEscape);
 		httpClient->SetUrl(sUrl.c_str());
 		httpClient->SetTimtout(m_timeout);
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
@@ -400,7 +424,7 @@ public:
 	{
 		if (!filePath)
 		{
-			return CURLE_BAD_FUNCTION_ARGUMENT;
+			return false;
 		}
 
 		HttpClientFC* httpClient = new HttpClientFC;
@@ -411,6 +435,8 @@ public:
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
@@ -557,97 +583,113 @@ public:
 		return itFinder->second[i].c_str();
 	}
 
-	const char* UrlGB2312Encode(const char * strIn) override
+	const char* UrlGB2312Encode(const char * strIn, size_t& inOutLen) override
 	{
-		std::string s = UrlCoding::UrlGB2312Encode(strIn);
+		std::string s = UrlCoding::UrlGB2312Encode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
-	const char* UrlGB2312Decode(const char * strIn) override
+	const char* UrlGB2312Decode(const char * strIn, size_t& inOutLen) override
 	{
-		std::string s = UrlCoding::UrlGB2312Decode(strIn);
+		std::string s = UrlCoding::UrlGB2312Decode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
-	virtual const char* UrlUTF8Encode(const char * strIn) override
+	virtual const char* UrlUTF8Encode(const char * strIn, size_t& inOutLen) override
 	{
-		std::string s = UrlCoding::UrlUTF8Encode(strIn);
+		std::string s = UrlCoding::UrlUTF8Encode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
-	virtual const char* UrlUTF8Decode(const char * strIn) override
+	virtual const char* UrlUTF8Decode(const char * strIn, size_t& inOutLen) override
 	{
 		static std::string ms;
-		std::string s = UrlCoding::UrlUTF8Decode(strIn);
+		std::string s = UrlCoding::UrlUTF8Decode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
 
-	virtual const char* WidebyteToAnsi(const wchar_t * strIn) override
+	virtual const char* WidebyteToAnsi(const wchar_t * strIn, size_t& inOutLen) override
 	{
 		std::string s;
-		if (!GL::WideByte2Ansi(s, strIn))
+		if (!GL::WideByte2Ansi(s, std::wstring(strIn, inOutLen)))
 			m_convertBuffA.assign("");
 		else
 			m_convertBuffA.assign(s);
+
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
 
-	virtual const wchar_t* AnsiToWidebyte(const char * strIn) override
+	virtual const wchar_t* AnsiToWidebyte(const char * strIn, size_t& inOutLen) override
 	{
 		std::wstring s;
-		if (!GL::Ansi2WideByte(s, strIn))
+		if (!GL::Ansi2WideByte(s, std::string(strIn, inOutLen)))
 			m_convertBuffW.assign(L"");
 		else
 			m_convertBuffW.assign(s);
+
+		inOutLen = m_convertBuffW.size();
 		return m_convertBuffW.c_str();
 	}
 
-	virtual const char* UTF8ToAnsi(const char * strIn) override
+	virtual const char* UTF8ToAnsi(const char * strIn, size_t& inOutLen) override
 	{
 		std::string s;
-		if (!GL::Utf82Ansi(s, strIn))
+		if (!GL::Utf82Ansi(s, std::string(strIn, inOutLen)))
 			m_convertBuffA.assign("");
 		else
 			m_convertBuffA.assign(s);
+
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
 
-	virtual const wchar_t* UTF8ToWidebyte(const char * strIn) override
+	virtual const wchar_t* UTF8ToWidebyte(const char * strIn, size_t& inOutLen) override
 	{
 		std::wstring s;
-		if (!GL::Utf82WideByte(s, strIn))
+		if (!GL::Utf82WideByte(s, std::string(strIn, inOutLen)))
 			m_convertBuffW.assign(L"");
 		else
 			m_convertBuffW.assign(s);
+
+		inOutLen = m_convertBuffW.size();
 		return m_convertBuffW.c_str();
 	}
 
 
-	virtual const char* AnsiToUTF8(const char * strIn) override
+	virtual const char* AnsiToUTF8(const char * strIn, size_t& inOutLen) override
 	{
 		std::string s;
-		if (!GL::Ansi2Utf8(s, strIn))
+		if (!GL::Ansi2Utf8(s, std::string(strIn, inOutLen)))
 			m_convertBuffA.assign("");
 		else
 			m_convertBuffA.assign(s);
+
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
 
-	virtual const char* WidebyteToUTF8(const wchar_t * strIn) override
+	virtual const char* WidebyteToUTF8(const wchar_t * strIn, size_t& inOutLen) override
 	{
 		std::string s;
-		if (!GL::WideByte2Utf8(s, strIn))
+		if (!GL::WideByte2Utf8(s, std::wstring(strIn, inOutLen)))
 			m_convertBuffA.assign("");
 		else
 			m_convertBuffA.assign(s);
+
+		inOutLen = m_convertBuffA.size();
 		return m_convertBuffA.c_str();
 	}
 
@@ -684,6 +726,12 @@ private:
 	HttpClient* m_httpClient;
 
 	std::set<char> m_urlEncodeEscape;
+
+	FN_HEADER_CALLBACK m_headerCallback;
+	void* m_headerUserData;
+
+	FN_WRITED_CALLBACK m_bodyCallback;
+	void* m_bodyUserData;
 
 	FN_PROGRESS_CALLBACK m_progressCallback;
 	void* m_progressUserData;
@@ -724,6 +772,16 @@ LIBCURLHTTP_API void setCustomMethod(LibcurlHttp* http, const char* method)
 	return http->setCustomMethod(method);
 }
 
+LIBCURLHTTP_API void setResponseHeaderCallback(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData)
+{
+	http->setResponseHeaderCallback(cb, userData);
+}
+
+LIBCURLHTTP_API void setResponseBodyCallback(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData)
+{
+	http->setResponseBodyCallback(cb, userData);
+}
+
 LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData)
 {
 	http->setProgress(progress, userData);
@@ -754,11 +812,11 @@ LIBCURLHTTP_API bool get_a(LibcurlHttp* http, const char* url, ...)
 	va_list argv;
 	va_start(argv, url);
 
-	int ret = http->get_b(url, argv);
+	bool b = http->get_b(url, argv);
 
 	va_end(argv);
 
-	return ret;
+	return b;
 }
 
 LIBCURLHTTP_API bool post(LibcurlHttp* http, const char* url, const char* content, size_t contentLen,
@@ -772,11 +830,11 @@ LIBCURLHTTP_API bool post_a(LibcurlHttp* http, const char* url, ...)
 	va_list argv;
 	va_start(argv, url);
 
-	int ret = http->post_b(url, argv);
+	bool b = http->post_b(url, argv);
 
 	va_end(argv);
 
-	return ret;
+	return b;
 }
 
 LIBCURLHTTP_API bool download(LibcurlHttp* http, const char* url, const char* localFileName/*=NULL*/, char* downloadedFileName/* = NULL*/)
@@ -799,11 +857,11 @@ LIBCURLHTTP_API bool postMultipart_a(LibcurlHttp* http, const char* url, ...)
 	va_list argv;
 	va_start(argv, url);
 
-	int ret = http->postMultipart_b(url, argv);
+	bool b = http->postMultipart_b(url, argv);
 
 	va_end(argv);
 
-	return ret;
+	return b;
 }
 
 LIBCURLHTTP_API bool postMultipart_b(LibcurlHttp* http, const char* url, va_list argv)
@@ -851,53 +909,53 @@ LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key
 	return http->getResponseHeader(key, i, ignoreCase);
 }
 
-LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->UrlGB2312Encode(strIn);
+	return http->UrlGB2312Encode(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->UrlGB2312Decode(strIn);
+	return http->UrlGB2312Decode(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* UrlUTF8Encode(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const char* UrlUTF8Encode(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->UrlUTF8Encode(strIn);
+	return http->UrlUTF8Encode(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->UrlUTF8Decode(strIn);
+	return http->UrlUTF8Decode(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn)
+LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen)
 {
-	return http->WidebyteToAnsi(strIn);
+	return http->WidebyteToAnsi(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->AnsiToWidebyte(strIn);
+	return http->AnsiToWidebyte(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->UTF8ToAnsi(strIn);
+	return http->UTF8ToAnsi(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->UTF8ToWidebyte(strIn);
+	return http->UTF8ToWidebyte(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn)
+LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->AnsiToUTF8(strIn);
+	return http->AnsiToUTF8(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn)
+LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen)
 {
-	return http->WidebyteToUTF8(strIn);
+	return http->WidebyteToUTF8(strIn, inOutLen);
 }
 

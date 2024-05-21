@@ -102,18 +102,19 @@ public:
 	virtual const std::vector<std::string>& GetResponseHeaders(const std::string& key, bool ignoreCase = true);
 
 protected:
+	//读取header，返回false则中断
+	virtual bool OnHeader(const char* header);
+	//读取数据，返回false则中断
 	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte);
-	virtual int OnProgress(
-		double downloadTotal, double downloadNow,
-		double uploadTotal, double uploadNow);
+	//进度，返回false则中断
+	virtual bool OnProgress(double downloadTotal, double downloadNow, double uploadTotal, double uploadNow);
 	virtual void OnDone(CURLcode code);
 
 protected:
+	static size_t _HeaderCallback(void* data, size_t size, size_t nmemb, void* userdata);
 	static size_t _WriteDataCallback(void* pBuffer, size_t nSize, size_t nMemByte, void* pParam);
 	static int _ProgressCallback(void * userData, 
-		double downloadTotal, double downloadNow, 
-		double uploadTotal, double uploadNow);
-	static size_t _HeaderCallback(void *data, size_t size, size_t nmemb, void *userdata);
+		double downloadTotal, double downloadNow, double uploadTotal, double uploadNow);
 
 protected:
 	typedef struct put_upload_ctx

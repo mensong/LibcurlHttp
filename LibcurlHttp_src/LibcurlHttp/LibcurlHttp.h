@@ -158,8 +158,25 @@ private:
 	MultipartField(const MultipartField* o) {}
 } MultipartField;
 
-//进度回调原型
-typedef int (*FN_PROGRESS_CALLBACK)(
+/// <summary>
+/// Response Header回调
+/// return: true - 继续；false - 中断
+/// </summary>
+typedef bool (*FN_HEADER_CALLBACK)(const char* header, void* userData);
+/// <summary>
+/// Response Body回调
+/// return: true - 继续；false - 中断
+/// </summary>
+typedef bool (*FN_WRITED_CALLBACK)(void* pBuffer, size_t nSize, size_t nMemByte, void* userData);
+/// <summary>
+/// 进度回调原型
+/// downloadTotal - 下载总长度
+/// downloadNow - 当前已下载的长度
+/// uploadTotal - 上载总长度
+/// uploadNow - 当前已上载的长度
+/// return: true - 继续；false - 中断
+/// </summary>
+typedef bool (*FN_PROGRESS_CALLBACK)(
 	double downloadTotal, double downloadNow,
 	double uploadTotal, double uploadNow,
 	void* userData);
@@ -180,9 +197,13 @@ public:
 	//  DELETE PUT HEAD OPTIONS FUCK……，全大写
 	virtual void setCustomMethod(const char* method) = 0;
 
+	//设置header回调
+	virtual void setResponseHeaderCallback(FN_HEADER_CALLBACK cb, void* userData) = 0;
+	//设置body数据回调
+	virtual void setResponseBodyCallback(FN_WRITED_CALLBACK cb, void* userData) = 0;
 	//设置进度回调
 	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) = 0;
-
+	
 	//设置是否自动重定向
 	virtual void setAutoRedirect(bool autoRedirect) = 0;
 	//设置自动重定向次数
@@ -236,23 +257,19 @@ public:
 	virtual int getResponseHeadersCount(const char* key, bool ignoreCase = false) = 0;
 	virtual const char* getResponseHeader(const char* key, int i, bool ignoreCase = false) = 0;
 
-	//url转码
-	virtual const char* UrlGB2312Encode(const char * strIn) = 0;
-	//url解码
-	virtual const char* UrlGB2312Decode(const char * strIn) = 0;
-
-	//url转码
-	virtual const char* UrlUTF8Encode(const char * strIn) = 0;
-	//url解码
-	virtual const char* UrlUTF8Decode(const char * strIn) = 0;
+	//url转码/解码
+	virtual const char* UrlGB2312Encode(const char * strIn, size_t& inOutLen) = 0;
+	virtual const char* UrlGB2312Decode(const char * strIn, size_t& inOutLen) = 0;
+	virtual const char* UrlUTF8Encode(const char * strIn, size_t& inOutLen) = 0;
+	virtual const char* UrlUTF8Decode(const char * strIn, size_t& inOutLen) = 0;
 
 	//字符转码
-	virtual const char* WidebyteToAnsi(const wchar_t * strIn) = 0;
-	virtual const wchar_t* AnsiToWidebyte(const char * strIn) = 0;
-	virtual const char* UTF8ToAnsi(const char * strIn) = 0;
-	virtual const wchar_t* UTF8ToWidebyte(const char * strIn) = 0;
-	virtual const char* AnsiToUTF8(const char * strIn) = 0;
-	virtual const char* WidebyteToUTF8(const wchar_t * strIn) = 0;
+	virtual const char* WidebyteToAnsi(const wchar_t * strIn, size_t& inOutLen) = 0;
+	virtual const wchar_t* AnsiToWidebyte(const char * strIn, size_t& inOutLen) = 0;
+	virtual const char* UTF8ToAnsi(const char * strIn, size_t& inOutLen) = 0;
+	virtual const wchar_t* UTF8ToWidebyte(const char * strIn, size_t& inOutLen) = 0;
+	virtual const char* AnsiToUTF8(const char * strIn, size_t& inOutLen) = 0;
+	virtual const char* WidebyteToUTF8(const wchar_t * strIn, size_t& inOutLen) = 0;
 };
 
 
@@ -266,6 +283,8 @@ LIBCURLHTTP_API void setTimeout(LibcurlHttp* http, int timeout);
 LIBCURLHTTP_API void setRequestHeader(LibcurlHttp* http, const char* key, const char* value);
 LIBCURLHTTP_API void setUserAgent(LibcurlHttp* http, const char* val);
 LIBCURLHTTP_API void setCustomMethod(LibcurlHttp* http, const char* method);
+LIBCURLHTTP_API void setResponseHeaderCallback(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData);
+LIBCURLHTTP_API void setResponseBodyCallback(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData);
 LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect);
 LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect);
@@ -295,17 +314,17 @@ LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i);
 LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key, bool ignoreCase);
 LIBCURLHTTP_API const char* getResponseHeader(LibcurlHttp* http, const char* key, int i, bool ignoreCase);
 
-LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn);
-LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strIn);
-LIBCURLHTTP_API const char* UrlUTF8Encode(LibcurlHttp* http, const char * strIn);
-LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn);
+LIBCURLHTTP_API const char* UrlGB2312Encode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* UrlUTF8Encode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 
-LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn);
-LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn);
-LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn);
-LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn);
-LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn);
-LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn);
+LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
 
 
 
@@ -320,6 +339,8 @@ public:
 	typedef void(*FN_setRequestHeader)(LibcurlHttp* http, const char* key, const char* value);
 	typedef void(*FN_setUserAgent)(LibcurlHttp* http, const char* val);
 	typedef void(*FN_setCustomMethod)(LibcurlHttp* http, const char* method);
+	typedef void(*FN_setResponseHeaderCallback)(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData);
+	typedef void(*FN_setResponseBodyCallback)(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData);
 	typedef void(*FN_setProgress)(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 	typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
 	typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
@@ -341,16 +362,16 @@ public:
 	typedef const char* (*FN_getResponseHeaderKey)(LibcurlHttp* http, int i);
 	typedef int(*FN_getResponseHeadersCount)(LibcurlHttp* http, const char* key);
 	typedef const char* (*FN_getResponseHeader)(LibcurlHttp* http, const char* key, int i);
-	typedef const char* (*FN_UrlGB2312Encode)(LibcurlHttp* http, const char * strIn);
-	typedef const char* (*FN_UrlGB2312Decode)(LibcurlHttp* http, const char * strIn);
-	typedef const char* (*FN_UrlUTF8Encode)(LibcurlHttp* http, const char * strIn);
-	typedef const char* (*FN_UrlUTF8Decode)(LibcurlHttp* http, const char * strIn);
-	typedef const char* (*FN_WidebyteToAnsi)(LibcurlHttp* http, const wchar_t * strIn);
-	typedef const wchar_t* (*FN_AnsiToWidebyte)(LibcurlHttp* http, const char * strIn);
-	typedef const char* (*FN_UTF8ToAnsi)(LibcurlHttp* http, const char * strIn);
-	typedef const wchar_t* (*FN_UTF8ToWidebyte)(LibcurlHttp* http, const char * strIn);
-	typedef const char* (*FN_AnsiToUTF8)(LibcurlHttp* http, const char * strIn);
-	typedef const char* (*FN_WidebyteToUTF8)(LibcurlHttp* http, const wchar_t * strIn);
+	typedef const char* (*FN_UrlGB2312Encode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_UrlGB2312Decode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_UrlUTF8Encode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_UrlUTF8Decode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_WidebyteToAnsi)(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
+	typedef const wchar_t* (*FN_AnsiToWidebyte)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_UTF8ToAnsi)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const wchar_t* (*FN_UTF8ToWidebyte)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_AnsiToUTF8)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_WidebyteToUTF8)(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
 
 #define DEF_PROC(hDll, name) \
 	name = (FN_##name)::GetProcAddress(hDll, #name)
@@ -367,6 +388,8 @@ public:
 		DEF_PROC(hDll, setRequestHeader);
 		DEF_PROC(hDll, setUserAgent);
 		DEF_PROC(hDll, setCustomMethod);
+		DEF_PROC(hDll, setResponseHeaderCallback);
+		DEF_PROC(hDll, setResponseBodyCallback);
 		DEF_PROC(hDll, setProgress);
 		DEF_PROC(hDll, setAutoRedirect);
 		DEF_PROC(hDll, setMaxRedirect); 
@@ -406,6 +429,8 @@ public:
 	FN_setRequestHeader		setRequestHeader;
 	FN_setUserAgent			setUserAgent;
 	FN_setCustomMethod		setCustomMethod;
+	FN_setResponseHeaderCallback setResponseHeaderCallback;
+	FN_setResponseBodyCallback setResponseBodyCallback;
 	FN_setProgress			setProgress;
 	FN_setAutoRedirect		setAutoRedirect;
 	FN_setMaxRedirect		setMaxRedirect;

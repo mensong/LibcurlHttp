@@ -6,11 +6,15 @@
 struct GlobalSetting
 {
 	int timeout = 30;
-	CString userAgent = _T("LibcurlHttp");
+	CString userAgent =
+		_T("Mozilla/999.0 (Windows NT 999) ")
+		_T("AppleWebKit/999.999 (KHTML, like Gecko) ")
+		_T("Chrome/9999.9999.9999.9999 ")
+		_T("Safari/9999.9999");
 	bool autoRedirect = true;
 	int autoRedirectMaxCount = 3;
 	bool gzip = true;
-
+	int showBodyMaxLength = 4096;
 };
 
 // CDlgSetting 对话框

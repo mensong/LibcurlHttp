@@ -8,13 +8,16 @@
 #include <iostream>
 #include "..\pystring\pystring.h"
 
-int PROGRESS_CALLBACK(double downloadTotal, double downloadNow,
+bool ProgressCallback(double downloadTotal, double downloadNow,
 	double uploadTotal, double uploadNow, void* userData)
 {
 	//<upload position, download position>
 	std::pair<COORD, COORD>* outputPos = (std::pair<COORD, COORD>*)userData;
 	if (!outputPos)
 		return 0;
+
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
 
 	if (uploadTotal != 0)
 	{
@@ -34,8 +37,43 @@ int PROGRESS_CALLBACK(double downloadTotal, double downloadNow,
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 
 		printf("↓%.0f/%.0f = %d%%\n", downloadNow, downloadTotal, (int)((downloadNow / downloadTotal) * 100));
+
+		////测试中断
+		//if ((downloadNow / downloadTotal) > 0.5)
+		//	return false;
 	}
-	return 0;
+
+	//恢复光标
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), 
+		{ csbi.dwCursorPosition.X, csbi.dwCursorPosition.Y });
+
+	return true;
+}
+
+bool g_isBodyTooLarge = false;
+bool HeaderCallback(const char* header, void* userData)
+{
+	printf(header);
+
+	std::string headerKV = header;
+	size_t seperator = headerKV.find_first_of(':');
+	if (std::string::npos != seperator)
+	{
+		std::string key = headerKV.substr(0, seperator);
+		key = pystring::strip(key);
+		if (pystring::equal(key, "Content-Length"))
+		{
+			std::string value = headerKV.substr(seperator + 1);
+			value = pystring::strip(value);
+			auto length = atoll(value.c_str());
+			if (length > 1024000)
+				g_isBodyTooLarge = true;
+			else
+				g_isBodyTooLarge = false;
+		}
+	}
+
+	return true;
 }
 
 void dumpCode(LibcurlHttp* http)
@@ -44,21 +82,62 @@ void dumpCode(LibcurlHttp* http)
 }
 void dumpBody(LibcurlHttp* http, bool utf8 = true)
 {
+	if (!g_isBodyTooLarge)
+	{
 #define MAX_PRINT 4096
-	size_t len = 0;
-	std::string sBody = http->getBody(len);
-	if (sBody.size() > MAX_PRINT)
-		sBody[MAX_PRINT] = '\0';
+		size_t len = 0;
+		std::string sBody = http->getBody(len);
+		if (sBody.size() > MAX_PRINT)
+			sBody[MAX_PRINT] = '\0';
 
-	if (utf8)
-		wprintf(http->UTF8ToWidebyte(sBody.c_str()));
+		if (utf8)
+		{
+			size_t len = strlen(sBody.c_str());
+			wprintf(http->UTF8ToWidebyte(sBody.c_str(), len));
+		}
+		else
+			printf(sBody.c_str());
+	}
 	else
-		printf(sBody.c_str());
+	{
+		printf("<内容太长>");
+	}
+
 	printf("\n");
+}
+
+void TestConvert()
+{
+	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
+
+	const char* pstr = "1a我①men";
+
+	//转码测试
+	size_t len = strlen(pstr);
+	const wchar_t* pwstr = http->AnsiToWidebyte(pstr, len);
+	const char* pustr = http->WidebyteToUTF8(pwstr, len);
+	const wchar_t* pwstr1 = http->UTF8ToWidebyte(pustr, len);
+	const char* pstr1 = http->WidebyteToAnsi(pwstr1, len);
+	if (strcmp(pstr, pstr1) == 0)
+		printf("测试通过\n");
+	else
+		printf("测试不通过\n");
+
+	//错误的utf8转码，则跳过错误码
+	len = strlen(pstr);
+	const wchar_t* pwstr2 = http->UTF8ToWidebyte(pstr, len);
+	if (wcscmp(pwstr2, L"1amen") == 0)
+		printf("测试通过\n");
+	else
+		printf("测试不通过\n");
+
+	HTTP_CLIENT::Ins().ReleaseHttp(http);
 }
 
 int main(int argc, char** argv)
 {
+	TestConvert();
+
 	//去除光标
 	HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_CURSOR_INFO ConsoleCursorInfo;
@@ -78,7 +157,13 @@ int main(int argc, char** argv)
 	progressPos.first = csbi.dwCursorPosition;
 	csbi.dwCursorPosition.Y += 1;
 	progressPos.second = csbi.dwCursorPosition;
-	http->setProgress(PROGRESS_CALLBACK, &progressPos);
+	http->setProgress(ProgressCallback, &progressPos);
+	//为进度腾出空间
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),
+		{ csbi.dwCursorPosition.X, (short)(csbi.dwCursorPosition.Y + 2) });
+
+	//设置头回调
+	http->setResponseHeaderCallback(HeaderCallback, NULL);
 
 #if 1
 	http->get("https://www.baidu.com");

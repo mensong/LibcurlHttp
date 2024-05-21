@@ -41,7 +41,7 @@ bool HttpFileDownload::OnWrited(void* pBuffer, size_t nSize, size_t nMemByte)
 	return (nWrite == nSize * nMemByte);
 }
 
-int HttpFileDownload::OnProgress(
+bool HttpFileDownload::OnProgress(
 	double downloadTotal, double downloadNow,
 	double uploadTotal, double uploadNow)
 {
@@ -58,7 +58,7 @@ int HttpFileDownload::OnProgress(
 	//	::PostMessage(hDlgWnd, WM_USER + 111, nPos, 0);
 	//}
 	
-	return 0;
+	return true;
 }
 
 void HttpFileDownload::closeFile()
@@ -273,7 +273,7 @@ bool HttpFileDownload::Do()
 			if (!fileName.empty())
 			{
 				if (bIsUtf8)
-					fileName = GL::Utf82Ansi(fileName.c_str());
+					GL::Utf82Ansi(fileName, fileName);
 				std::string targetFileName = os_path::dirname(saveFileName);
 				if (!targetFileName.empty())
 					targetFileName = os_path::join(targetFileName, fileName);

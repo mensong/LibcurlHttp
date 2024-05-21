@@ -16,8 +16,7 @@ public:
 protected:
 	virtual void OnDone(CURLcode code) override;
 	virtual bool OnWrited(void* pBuffer, size_t nSize, size_t nMemByte) override;
-	virtual int OnProgress(
-		double downloadTotal, double downloadNow,
+	virtual bool OnProgress(double downloadTotal, double downloadNow,
 		double uploadTotal, double uploadNow) override;
 		
 protected:

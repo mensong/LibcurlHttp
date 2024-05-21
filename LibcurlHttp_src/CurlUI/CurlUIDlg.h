@@ -31,7 +31,8 @@ protected:
 	
 	void fillDefaultSetting(LibcurlHttp* http);
 
-	static int _PROGRESS_CALLBACK(
+	bool m_running;
+	static bool _PROGRESS_CALLBACK(
 		double downloadTotal, double downloadNow,
 		double uploadTotal, double uploadNow,
 		void* userData);
@@ -45,6 +46,8 @@ protected:
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
+	virtual void OnOK() override;
+	virtual void OnCancel() override;
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 

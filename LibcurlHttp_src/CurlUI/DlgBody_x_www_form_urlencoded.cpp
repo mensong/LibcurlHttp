@@ -56,9 +56,11 @@ std::string CDlgBody_x_www_form_urlencoded::GetTextValue()
 		std::string value = CW2A(values[i].second);
 		if (!content.empty())
 			content += "&";
-		content += http->UrlUTF8Encode(key.c_str());
+		size_t len = key.size();
+		content += http->UrlUTF8Encode(key.c_str(), len);
 		content += "=";
-		content += http->UrlUTF8Encode(value.c_str());
+		len = value.size();
+		content += http->UrlUTF8Encode(value.c_str(), len);
 	}
 
 	HTTP_CLIENT::Ins().ReleaseHttp(http);

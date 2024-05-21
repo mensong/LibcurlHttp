@@ -70,6 +70,13 @@ void CDlgSetting::initProperties()
 	pIsGZipItem->AddOption(_T("不自动Gzip解包"));
 	pIsGZipItem->AllowEdit(FALSE);  //不允许对选项进行编辑
 	m_property.AddProperty(pIsGZipItem);
+
+	CMFCPropertyGridProperty* pShowBodyMaxLength =
+		new CMFCPropertyGridProperty(
+			_T("界面上显示的数据最长长度"),
+			_itot(m_setting.showBodyMaxLength, buff, 10),
+			_T("如果Body长度大于这个数值，则不显示超出的内容"));
+	m_property.AddProperty(pShowBodyMaxLength);
 }
 
 void CDlgSetting::DoDataExchange(CDataExchange* pDX)
@@ -137,6 +144,10 @@ void CDlgSetting::OnBnClickedOk()
 		{
 			CString v = prop->GetValue().bstrVal;
 			m_setting.gzip = v == _T("自动Gzip解包");
+		}
+		else if (name == _T("界面上显示的数据最长长度"))
+		{
+			m_setting.showBodyMaxLength = _ttoi(prop->GetValue().bstrVal);
 		}
 	}
 

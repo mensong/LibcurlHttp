@@ -9,27 +9,25 @@
 namespace GL
 {
 
-bool Convert(std::string &out, const char *pIn, const char *tocode, const char *fromcode)
+bool Convert(std::string &out, const std::string& in, const char *tocode, const char *fromcode)
 {
-	if (pIn == NULL)
-		return false;
-
 	bool bRet = false;
 
-	if ((size_t)pIn >= (size_t)(out.c_str()) && (size_t)pIn <= (size_t)(out.c_str()) + ((size_t)(out.size()) + sizeof(char)))//out.c_str() != pIn
+	if (&out == &in)
 	{//输出和输入是同一块内存
-		std::string sIn = pIn;
+		std::string sIn = in;
 		iconv_t cd = iconv_open(tocode, fromcode);
 		if (cd != (iconv_t)-1)
 		{
-			size_t srcLen = sIn.length() + 1;
-			size_t destLen = (srcLen - 1) * 4;
+			size_t srcLen = sIn.size();
+			size_t destLen = srcLen * 4;
 			const char *pInTemp = sIn.c_str();
-			out.resize(destLen, '\0');
-			char *pOut = const_cast<char *>(out.c_str());
-			if (iconv(cd, &pInTemp, &srcLen, &pOut, &destLen) != -1)
+			out.resize(destLen + 1, '\0');
+			char *pOut = &out[0];
+			size_t convLen = iconv(cd, &pInTemp, &srcLen, &pOut, &destLen);
+			if (convLen != -1)
 			{
-				out.resize(strlen(out.c_str()));
+				out.resize(convLen);
 				bRet = true;
 			}
 			else
@@ -44,14 +42,15 @@ bool Convert(std::string &out, const char *pIn, const char *tocode, const char *
 		iconv_t cd = iconv_open(tocode, fromcode);
 		if (cd != (iconv_t)-1)
 		{
-			size_t srcLen = strlen(pIn) + 1;
-			size_t destLen = (srcLen - 1) * 4;
-			out.resize(destLen, '\0');
-			char *pOut = const_cast<char *>(out.c_str());
-			const char *pInx = pIn;//必须的
-			if (iconv(cd, &pInx, &srcLen, &pOut, &destLen) != -1)
+			size_t srcLen = in.size();
+			size_t destLen = srcLen * 4;
+			out.resize(destLen + 1, '\0');
+			char *pOut = &out[0];
+			const char *pInx = &in[0];//必须的
+			size_t convLen = iconv(cd, &pInx, &srcLen, &pOut, &destLen);
+			if (convLen != -1)
 			{
-				out.resize(strlen(out.c_str()));
+				out.resize(convLen);
 				bRet = true;
 			}
 			else
@@ -65,19 +64,9 @@ bool Convert(std::string &out, const char *pIn, const char *tocode, const char *
 	return bRet;
 }
 
-std::string Convert(const char *pIn, const char *tocode, const char *fromcode)
-{
-	std::string s;
-	Convert(s, pIn, tocode, fromcode);
-	return s;
-}
-
 //unicode 转为 ansi
-bool WideByte2Ansi(std::string &out, const wchar_t* wstrcode, const char* locale/* = ""*/)
+bool WideByte2Ansi(std::string &out, const std::wstring& in, const char* locale/* = ""*/)
 {
-	if (wstrcode == NULL)
-		return false;
-
 #if USE_WINDOWS
 	int ansiSize = WideCharToMultiByte(CP_OEMCP, 0, wstrcode, -1, NULL, 0, NULL, NULL);
 	if (ansiSize == ERROR_NO_UNICODE_TRANSLATION)
@@ -103,7 +92,7 @@ bool WideByte2Ansi(std::string &out, const wchar_t* wstrcode, const char* locale
 
 #else
 
-	size_t nLen = wcslen(wstrcode) * 2;
+	size_t nLen = in.size() * 2;
 	if (nLen == 0)
 	{
 		out.resize(0);
@@ -113,14 +102,15 @@ bool WideByte2Ansi(std::string &out, const wchar_t* wstrcode, const char* locale
 	setlocale(LC_ALL, locale);
 	char* ar = new char[nLen + 1];
 	memset(ar, 0, nLen + 1);
-	size_t read = wcstombs(ar, wstrcode, nLen);
+	size_t read = wcstombs(ar, in.c_str(), nLen);
 	if (read == (size_t)-1)
-		out.resize(out.length());
+	{
+		out.resize(0);
+	}
 	else
 	{
 		ar[read] = '\0';
 		out = ar;
-		out.resize(read);
 	}
 
 	delete[] ar;
@@ -131,19 +121,9 @@ bool WideByte2Ansi(std::string &out, const wchar_t* wstrcode, const char* locale
 #endif
 }
 
-std::string WideByte2Ansi(const wchar_t* wstrcode, const char* locale /*= ""*/)
-{
-	std::string s;
-	WideByte2Ansi(s, wstrcode, locale);
-	return s;
-}
-
 //ansi 转 Unicode
-bool Ansi2WideByte(std::wstring& out, const char* strAnsi, const char* locale/* = ""*/)
+bool Ansi2WideByte(std::wstring& out, const std::string& in, const char* locale/* = ""*/)
 {
-	if (strAnsi == NULL)
-		return false;
-
 #if USE_WINDOWS
 	int widesize = MultiByteToWideChar(CP_ACP, 0, strAnsi, -1, NULL, 0);
 	if (widesize == ERROR_NO_UNICODE_TRANSLATION)
@@ -168,7 +148,7 @@ bool Ansi2WideByte(std::wstring& out, const char* strAnsi, const char* locale/* 
 	return true;
 #else
 
-	size_t nLen = strlen(strAnsi);
+	size_t nLen = in.size();
 	if (nLen == 0)
 	{
 		out.resize(0);
@@ -178,14 +158,15 @@ bool Ansi2WideByte(std::wstring& out, const char* strAnsi, const char* locale/* 
 	setlocale(LC_ALL, locale);
 	wchar_t* ar = new wchar_t[nLen + 1];
 	memset(ar, 0, nLen + 1);
-	size_t read = mbstowcs(ar, strAnsi, nLen);
+	size_t read = mbstowcs(ar, in.c_str(), nLen);
 	if (read == (size_t)-1)
-		out.resize(out.length());
+	{
+		out.resize(0);
+	}
 	else
 	{
 		ar[read] = '\0';
 		out = ar;
-		out.resize(read);
 	}
 
 	delete[] ar;
@@ -196,149 +177,102 @@ bool Ansi2WideByte(std::wstring& out, const char* strAnsi, const char* locale/* 
 #endif
 }
 
-std::wstring Ansi2WideByte(const char* strAnsi, const char* locale /*= ""*/)
-{
-	std::wstring ws;
-	Ansi2WideByte(ws, strAnsi, locale);
-	return ws;
-}
-
 //Unicode 转 UTF8
-bool WideByte2Utf8(std::string& out, const wchar_t* src, const char* locale/* = ""*/)
+bool WideByte2Utf8(std::string& out, const std::wstring& in, const char* locale/* = ""*/)
 {
-	WideByte2Ansi(out, src, locale);
-	return Convert(out, out.c_str(), "UTF-8", "GBK");
-}
-
-std::string WideByte2Utf8(const wchar_t* src, const char* locale /*= ""*/)
-{
-	std::string s;
-	WideByte2Utf8(s, src, locale);
-	return s;
+	if (!WideByte2Ansi(out, in, locale))
+		return false;
+	return Convert(out, out, "UTF-8", "GBK");
 }
 
 //UTF8 转 Unicode
-bool Utf82WideByte(std::wstring& out, const char* src, const char* locale/* = ""*/)
+bool Utf82WideByte(std::wstring& out, const std::string& in, const char* locale/* = ""*/)
 {
 	std::string s;
-	bool b = Convert(s, src, "GBK", "UTF-8");
-	Ansi2WideByte(out, s.c_str(), locale);
-	return b;
+	if (!Convert(s, in, "GBK", "UTF-8"))
+		return false;
+	if (!Ansi2WideByte(out, s, locale))
+		return false;
+	return true;
 }
 
-std::wstring Utf82WideByte(const char* src, const char* locale /*= ""*/)
+bool Ansi2Utf8(std::string& out, const std::string& in, const char* locale/* = ""*/)
 {
 	std::wstring ws;
-	Utf82WideByte(ws, src, locale);
-	return ws;
-}
-
-bool Ansi2Utf8(std::string& out, const char* strAnsi, const char* locale/* = ""*/)
-{
-	std::wstring ws;
-	Ansi2WideByte(ws, strAnsi, locale);
+	if (!Ansi2WideByte(ws, in, locale))
+		return false;
 	return WideByte2Utf8(out, ws.c_str(), locale);
 }
 
-std::string Ansi2Utf8(const char* strAnsi, const char* locale /*= ""*/)
-{
-	std::string s;
-	Ansi2Utf8(s, strAnsi, locale);
-	return s;
-}
-
-bool Utf82Ansi(std::string& out, const char* strUtf8, const char* locale/* = ""*/)
+bool Utf82Ansi(std::string& out, const std::string& in, const char* locale/* = ""*/)
 {
 	std::wstring ws;
-	Utf82WideByte(ws, strUtf8, locale);
+	if (!Utf82WideByte(ws, in, locale))
+		return false;
 	return WideByte2Ansi(out, ws.c_str(), locale);
 }
 
-std::string Utf82Ansi(const char* strUtf8, const char* locale /*= ""*/)
+bool StrToHex(std::string& out, const std::string& in)
 {
-	std::string s;
-	Utf82Ansi(s, strUtf8, locale);
-	return s;
-}
-
-std::string StrToHex(const char* strData)
-{
-	if (strData == NULL)
-		return "";
-
 	//初始化
-	std::string strTemp = "";
-	int iLenth = strlen(strData);
+	int iLenth = strlen(in.c_str());
 	int nNewSize = (iLenth + 1) * 2;
-	char* cArrTemp = new char[nNewSize];
-	memset(cArrTemp, 0, nNewSize);
+	char* cArrTemp = new char[nNewSize + 1];
+	memset(cArrTemp, 0, nNewSize + 1);
 
 	for (int i = 0; i < iLenth; i++)
 	{
-		if (strData[i] == 0)
+		if (in[i] == 0)
 		{
 			break;
 		}
-		sprintf(cArrTemp + (i * 2), "%02X", (unsigned char)strData[i]);
+		sprintf(cArrTemp + (i * 2), "%02X", (unsigned char)in[i]);
 	}
 
-	strTemp = cArrTemp;
-	strTemp.resize(iLenth * 2);
+	out = cArrTemp;
 	delete[] cArrTemp;
 
-	return strTemp;
+	return true;
 }
 
-std::string HexToStr(const char* strHex)
+bool HexToStr(std::string& out, const std::string& in)
 {
-	if (strHex == NULL)
-		return "";
-
-	std::string strTemp = "";
-	int iLenth = strlen(strHex);
+	int iLenth = strlen(in.c_str());
 	char *cArrTemp = new char[iLenth + 1];
 	memset(cArrTemp, 0, iLenth + 1);
 
 	int iOcx;
 	for (int i = 0; i < iLenth / 2; i++)
 	{
-		if (1 != sscanf(strHex + (i * 2), "%2x", (unsigned int*)&iOcx))
+		if (1 != sscanf(&in[i * 2], "%2x", (unsigned int*)&iOcx))
 			break;
 		cArrTemp[i] = (char)iOcx;
 	}
 
-	strTemp = cArrTemp;
-	strTemp.resize(iLenth / 2);
-
+	out = cArrTemp;
 	delete[] cArrTemp;
 
-	return strTemp;
+	return true;
 }
 
-std::wstring StrToHex(const wchar_t* strData)
+bool StrToHex(std::wstring& out, const std::wstring& in)
 {
-	if (strData == NULL)
-		return L"";
-
 	std::string ansi;
-	WideByte2Ansi(ansi, strData);
-	ansi = StrToHex(ansi.c_str());
-	std::wstring ws;
-	Ansi2WideByte(ws, ansi.c_str());
-	return ws;
+	if (!WideByte2Ansi(ansi, in))
+		return false;
+	if (!StrToHex(ansi, ansi))
+		return false;
+	return Ansi2WideByte(out, ansi);
 }
 
-std::wstring HexToStr(const wchar_t* strHex)
+bool HexToStr(std::wstring& out, const std::wstring& in)
 {
-	if (strHex == NULL)
-		return L"";
-
 	std::string ansi;
-	WideByte2Ansi(ansi, strHex);
-	ansi = HexToStr(ansi.c_str());
-	std::wstring ws;
-	Ansi2WideByte(ws, ansi.c_str());
-	return ws;
+	if (!WideByte2Ansi(ansi, in))
+		return false;
+	if (!HexToStr(ansi, ansi))
+		return false;
+	return Ansi2WideByte(out, ansi);
 }
 
 }
