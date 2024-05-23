@@ -1,4 +1,4 @@
-// Test.cpp : ¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌĞòµÄÈë¿Úµã¡£
+ï»¿// Test.cpp : å®šä¹‰æ§åˆ¶å°åº”ç”¨ç¨‹åºçš„å…¥å£ç‚¹ã€‚
 //
 
 #include "stdafx.h"
@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include "..\pystring\pystring.h"
+#include "..\HttpHelper\Convertor.h"
 
 bool ProgressCallback(double downloadTotal, double downloadNow,
 	double uploadTotal, double uploadNow, void* userData)
@@ -26,7 +27,7 @@ bool ProgressCallback(double downloadTotal, double downloadNow,
 		coord.Y = outputPos->first.Y;
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 		
-		printf("¡ü%.0f/%.0f = %d%%\n", uploadNow, uploadTotal, (int)((uploadNow / uploadTotal) * 100));
+		printf("â†‘%.0f/%.0f = %d%%\n", uploadNow, uploadTotal, (int)((uploadNow / uploadTotal) * 100));
 	}
 
 	if (downloadTotal != 0)
@@ -36,14 +37,14 @@ bool ProgressCallback(double downloadTotal, double downloadNow,
 		coord.Y = outputPos->second.Y;
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 
-		printf("¡ı%.0f/%.0f = %d%%\n", downloadNow, downloadTotal, (int)((downloadNow / downloadTotal) * 100));
+		printf("â†“%.0f/%.0f = %d%%\n", downloadNow, downloadTotal, (int)((downloadNow / downloadTotal) * 100));
 
-		////²âÊÔÖĞ¶Ï
+		////æµ‹è¯•ä¸­æ–­
 		//if ((downloadNow / downloadTotal) > 0.5)
 		//	return false;
 	}
 
-	//»Ö¸´¹â±ê
+	//æ¢å¤å…‰æ ‡
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), 
 		{ csbi.dwCursorPosition.X, csbi.dwCursorPosition.Y });
 
@@ -93,43 +94,43 @@ void dumpBody(LibcurlHttp* http, bool utf8 = true)
 		if (utf8)
 		{
 			size_t len = strlen(sBody.c_str());
-			wprintf(http->UTF8ToWidebyte(sBody.c_str(), len));
+			wprintf(http->UTF8ToUnicode(sBody.c_str(), len));
 		}
 		else
 			printf(sBody.c_str());
 	}
 	else
 	{
-		printf("<ÄÚÈİÌ«³¤>");
+		printf("<å†…å®¹å¤ªé•¿>");
 	}
 
 	printf("\n");
 }
 
 void TestConvert()
-{
+{	
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
-	const char* pstr = "1aÎÒ¢Ùmen";
+	const char* pstr = "1aæˆ‘â‘ â–³â–½â—‹â—‡â–¡â˜†â–²â–¼â—â–“â€»men";
 
-	//×ªÂë²âÊÔ
+	//è½¬ç æµ‹è¯•
 	size_t len = strlen(pstr);
-	const wchar_t* pwstr = http->AnsiToWidebyte(pstr, len);
-	const char* pustr = http->WidebyteToUTF8(pwstr, len);
-	const wchar_t* pwstr1 = http->UTF8ToWidebyte(pustr, len);
-	const char* pstr1 = http->WidebyteToAnsi(pwstr1, len);
+	const wchar_t* pwstr = http->AnsiToUnicode(pstr, len);
+	const char* pustr = http->UnicodeToUTF8(pwstr, len);
+	const wchar_t* pwstr1 = http->UTF8ToUnicode(pustr, len);
+	const char* pstr1 = http->UnicodeToAnsi(pwstr1, len);
 	if (strcmp(pstr, pstr1) == 0)
-		printf("²âÊÔÍ¨¹ı\n");
+		printf("æµ‹è¯•é€šè¿‡\n");
 	else
-		printf("²âÊÔ²»Í¨¹ı\n");
+		printf("æµ‹è¯•ä¸é€šè¿‡\n");
 
-	//´íÎóµÄutf8×ªÂë£¬ÔòÌø¹ı´íÎóÂë
+	//é”™è¯¯çš„utf8è½¬ç ï¼Œåˆ™è·³è¿‡é”™è¯¯ç 
 	len = strlen(pstr);
-	const wchar_t* pwstr2 = http->UTF8ToWidebyte(pstr, len);
+	const wchar_t* pwstr2 = http->UTF8ToUnicode(pstr, len);
 	if (wcscmp(pwstr2, L"1amen") == 0)
-		printf("²âÊÔÍ¨¹ı\n");
+		printf("æµ‹è¯•é€šè¿‡\n");
 	else
-		printf("²âÊÔ²»Í¨¹ı\n");
+		printf("æµ‹è¯•ä¸é€šè¿‡\n");
 
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 }
@@ -138,19 +139,19 @@ int main(int argc, char** argv)
 {
 	TestConvert();
 
-	//È¥³ı¹â±ê
+	//å»é™¤å…‰æ ‡
 	HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_CURSOR_INFO ConsoleCursorInfo;
 	GetConsoleCursorInfo(hConsoleOutput, &ConsoleCursorInfo);
 	ConsoleCursorInfo.bVisible = FALSE;
 	SetConsoleCursorInfo(hConsoleOutput, &ConsoleCursorInfo);
 
-	//´´½¨HTTP¶ÔÏó
+	//åˆ›å»ºHTTPå¯¹è±¡
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
 	//http->setCustomMethod("mensong");
 
-	//ÉèÖÃ½ø¶ÈÏÔÊ¾
+	//è®¾ç½®è¿›åº¦æ˜¾ç¤º
 	std::pair<COORD, COORD> progressPos;
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
@@ -158,12 +159,12 @@ int main(int argc, char** argv)
 	csbi.dwCursorPosition.Y += 1;
 	progressPos.second = csbi.dwCursorPosition;
 	http->setProgress(ProgressCallback, &progressPos);
-	//Îª½ø¶ÈÌÚ³ö¿Õ¼ä
+	//ä¸ºè¿›åº¦è…¾å‡ºç©ºé—´
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),
 		{ csbi.dwCursorPosition.X, (short)(csbi.dwCursorPosition.Y + 2) });
 
-	//ÉèÖÃÍ·»Øµ÷
-	http->setResponseHeaderCallback(HeaderCallback, NULL);
+	//è®¾ç½®å¤´å›è°ƒ
+	http->setResponseHeaderCallback(HeaderCallback, NULL, true);
 
 #if 1
 	http->get("https://www.baidu.com");
@@ -220,15 +221,15 @@ int main(int argc, char** argv)
 
 #if 0
 	std::string url(1024, 0);
-	std::cout << "ÊäÈëurl:";
+	std::cout << "è¾“å…¥url:";
 	std::cin.getline(&url[0], 1024);
 
 	std::string cookies(1024, 0);
-	std::cout << "ÊäÈëcookies:";
+	std::cout << "è¾“å…¥cookies:";
 	std::cin.getline(&cookies[0], 1024);
 
 	std::string data(10240, 0);
-	std::cout << "ÊäÈëÌá½»ÄÚÈİ:";
+	std::cout << "è¾“å…¥æäº¤å†…å®¹:";
 	std::cin.getline(&data[0], 10240);
 
 	http->setRequestHeader("Accept", "application/json, text/plain, */*");
@@ -244,7 +245,7 @@ int main(int argc, char** argv)
 		std::to_string(st.wMonth) + "-" +
 		std::to_string(st.wDay));
 	http->setRequestHeader("Platform_Auth", Platform_Auth.c_str());
-	//²»×Ô¶¯ÖØ¶¨Ïò£¬ÒÔ»ñµÃµ±cookies¹ıÆÚÊ±µÄ´íÎóĞÅÏ¢
+	//ä¸è‡ªåŠ¨é‡å®šå‘ï¼Œä»¥è·å¾—å½“cookiesè¿‡æœŸæ—¶çš„é”™è¯¯ä¿¡æ¯
 	http->setAutoRedirect(false);
 
 	int httpCode = http->post(url.c_str(),
@@ -261,7 +262,7 @@ int main(int argc, char** argv)
 
 	dumpCode(http);
 
-	//Ïú»Ù¶ÔÏó
+	//é”€æ¯å¯¹è±¡
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 
     return 0;

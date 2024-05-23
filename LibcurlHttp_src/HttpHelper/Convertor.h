@@ -2,9 +2,10 @@
 #include <string>
 #include "iconv.h"
 
+#define USE_WINDOWS 1
+
 namespace GL
 {
-
 	//转换函数
 	// out : 返回转化
 	// pIn : 输入
@@ -13,16 +14,16 @@ namespace GL
 	bool Convert(std::string& out, const std::string& in, const char* tocode, const char* fromcode);
 
 	//unicode 转为 ansi
-	bool WideByte2Ansi(std::string &out, const std::wstring& in, const char* locale = "");
+	bool Unicode2Ansi(std::string &out, const std::wstring& in, const char* locale = "");
 
 	//ansi 转 Unicode
-	bool Ansi2WideByte(std::wstring& out, const std::string& in, const char* locale = "");
+	bool Ansi2Unicode(std::wstring& out, const std::string& in, const char* locale = "");
 
 	//Unicode 转 UTF8
-	bool WideByte2Utf8(std::string& out, const std::wstring& in, const char* locale = "");
+	bool Unicode2Utf8(std::string& out, const std::wstring& in, const char* locale = "");
 
 	//UTF8 转 Unicode
-	bool Utf82WideByte(std::wstring& out, const std::string& in, const char* locale = "");
+	bool Utf82Unicode(std::wstring& out, const std::string& in, const char* locale = "");
 
 	//ansi转UTF8
 	bool Ansi2Utf8(std::string& out, const std::string& in, const char* locale = "");

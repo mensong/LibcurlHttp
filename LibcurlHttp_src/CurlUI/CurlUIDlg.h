@@ -32,10 +32,10 @@ protected:
 	void fillDefaultSetting(LibcurlHttp* http);
 
 	bool m_running;
-	static bool _PROGRESS_CALLBACK(
-		double downloadTotal, double downloadNow,
-		double uploadTotal, double uploadNow,
-		void* userData);
+	static bool _PROGRESS_CALLBACK(double downloadTotal, double downloadNow, 
+		double uploadTotal, double uploadNow, void* userData);
+	static bool _HEADER_CALLBACK(const char* header, void* userData);
+	static bool _WRITED_CALLBACK(void* pBuffer, size_t nSize, size_t nMemByte, void* userData);
 
 	void dumpResponse(LibcurlHttp* http);
 
@@ -60,15 +60,20 @@ public:
 	CProgressCtrl m_progress;
 	CCtrlScale m_scale;
 	CCtrlScale m_scaleTab;
-	std::vector<CCtrlScale*> m_pageScales;
-
+	std::vector<CCtrlScale*> m_pageScales;	
 	std::vector<CDialogEx*> m_pages;
 	CTabCtrl m_tabParams;
 	CDlgSetting m_setting;
+	bool m_isResponseBodyUtf8;
+	CFile m_fileSaveBody;
+	bool isFileSaveBodyValid();
 
 	afx_msg void OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnEnChangeEditUrl();
 	afx_msg void OnNMClickbtnsetting(NMHDR* pNMHDR, LRESULT* pResult);
+	CButton m_chkSaveBodyToFile;
+	afx_msg void OnBnClickedChkSaveToFile();
+	CString m_saveBodyFilePath;
 };
 
 template<class TPage>

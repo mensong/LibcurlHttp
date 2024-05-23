@@ -28,6 +28,7 @@
 #define IDC_CHECK1                      1009
 #define IDC_CHK_IS_FILE                 1009
 #define IDC_CHK_ENABLE                  1009
+#define IDC_CHK_SAVE_TO_FILE            1009
 #define IDC_EDIT1                       1010
 #define IDC_EDIT_BODY_RAW               1010
 #define IDC_EDIT_FILE_PATH              1010

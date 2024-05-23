@@ -14,8 +14,8 @@ public:
 	HttpClientFC();
 	virtual ~HttpClientFC();
 
-	void SetHeaderCallback(FN_HEADER_CALLBACK cb, void* userData);
-	void SetBodyCallback(FN_WRITED_CALLBACK cb, void* userData);
+	void SetHeaderCallback(FN_HEADER_CALLBACK cb, void* userData, bool writeBuff);
+	void SetBodyCallback(FN_WRITED_CALLBACK cb, void* userData, bool writeBuff);
 	void SetProgress(FN_PROGRESS_CALLBACK progressCallback, void* userData);
 
 protected:
@@ -27,9 +27,11 @@ protected:
 private:
 	FN_HEADER_CALLBACK m_headerCallback;
 	void* m_userDataHeader;
+	bool m_headerWriteBuff;
 
 	FN_WRITED_CALLBACK m_writedCallback;
 	void* m_userDataWrited;
+	bool m_bodyWriteBuff;
 
 	FN_PROGRESS_CALLBACK m_progressCallback;
 	void* m_userDataProgress;

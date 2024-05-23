@@ -50,7 +50,7 @@ HttpClient::HttpClient()
 	, m_isInnerPost(false)
 	, m_putData(NULL)
 	, m_putDataLen(0)
-	, m_decompressIfGzip(true)
+	, m_responseBodyDecode(true)
 {
 	m_userAgent = 
 		"Mozilla/999.0 (Windows NT 999) "
@@ -120,6 +120,11 @@ bool HttpClient::Do()
 		curl = curl_easy_init();
 		//设置url
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		//自动进行解码
+		if (m_responseBodyDecode)
+			curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
+		else
+			curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, NULL);
 		//设置接收数据的回调
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _WriteDataCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, _THIS);
@@ -378,29 +383,29 @@ bool HttpClient::Do()
 		}
 		else
 		{
-			//处理GZIP
-			bool isGzip = false;
-			if (m_decompressIfGzip && m_body.size() > 0)
-			{
-				std::vector<std::string> ContentEncoding = GetResponseHeaders("Content-Encoding", true);
-				for (size_t i = 0; i < ContentEncoding.size(); i++)
-				{
-					std::string v = pystring::lower(ContentEncoding[i]);
-					if (v.find("gzip") != std::string::npos)
-					{
-						isGzip = true;
-						break;
-					}
-				}
-				if (isGzip)
-				{
-					std::string writeData;
-					if (tryDecompressGzip((const char*)&m_body[0], m_body.size(), writeData))
-					{
-						m_body = writeData;
-					}
-				}
-			}
+			////处理GZIP
+			//bool isGzip = false;
+			//if (m_responseBodyDecode && m_body.size() > 0)
+			//{
+			//	std::vector<std::string> ContentEncoding = GetResponseHeaders("Content-Encoding", true);
+			//	for (size_t i = 0; i < ContentEncoding.size(); i++)
+			//	{
+			//		std::string v = pystring::lower(ContentEncoding[i]);
+			//		if (v.find("gzip") != std::string::npos)
+			//		{
+			//			isGzip = true;
+			//			break;
+			//		}
+			//	}
+			//	if (isGzip)
+			//	{
+			//		std::string writeData;
+			//		if (tryDecompressGzip((const char*)&m_body[0], m_body.size(), writeData))
+			//		{
+			//			m_body = writeData;
+			//		}
+			//	}
+			//}
 
 			int64_t http_code = 0;
 			CURLcode code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);

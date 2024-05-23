@@ -47,8 +47,8 @@ public:
 	virtual void SetAutoRedirect(bool autoRedirect) { m_autoRedirect = autoRedirect; }
 	virtual bool GetAutoRedirect() { return m_autoRedirect; }
 
-	virtual void SetDecompressIfGzip(bool decompressIfGzip) { m_decompressIfGzip = decompressIfGzip; }
-	virtual bool GetDecompressIfGzip() { return m_decompressIfGzip; }
+	virtual void SetResponseBodyAutoDecode(bool decode) { m_responseBodyDecode = decode; }
+	virtual bool GetResponseBodyAutoDecode() { return m_responseBodyDecode; }
 
 	virtual void SetMaxRedirect(int maxRedirect) { m_maxRedirect = maxRedirect; }
 	virtual int GetMaxRedirect() { return m_maxRedirect; }
@@ -173,7 +173,7 @@ protected:
 	std::string m_userAgent;
 	bool m_autoRedirect;
 	int m_maxRedirect;
-	bool m_decompressIfGzip;
+	bool m_responseBodyDecode;
 
 	std::map<std::string, std::string> m_headers;
 

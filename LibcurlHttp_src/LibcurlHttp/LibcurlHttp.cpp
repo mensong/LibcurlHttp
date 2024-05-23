@@ -18,13 +18,15 @@ public:
 		, m_timeout(0)
 		, m_headerCallback(NULL)
 		, m_headerUserData(NULL)
+		, m_headerWriteBuff(true)
 		, m_bodyCallback(NULL)
 		, m_bodyUserData(NULL)
+		, m_bodyWriteBuff(false)
 		, m_progressCallback(NULL)
 		, m_progressUserData(NULL)
 		, m_autoRedirect(true)
 		, m_maxRedirect(5)
-		, m_decompressIfGzip(true)
+		, m_responseBodyDecode(true)
 	{
 		m_urlEncodeEscape.insert('/');
 		m_urlEncodeEscape.insert(':');
@@ -50,16 +52,18 @@ public:
 		m_timeout = t;
 	}
 
-	virtual void setResponseHeaderCallback(FN_HEADER_CALLBACK cb, void* userData) override
+	virtual void setResponseHeaderCallback(FN_HEADER_CALLBACK cb, void* userData, bool writeBuff = true) override
 	{
 		m_headerCallback = cb;
 		m_headerUserData = userData;
+		m_headerWriteBuff = writeBuff;
 	}
 	
-	virtual void setResponseBodyCallback(FN_WRITED_CALLBACK cb, void* userData) override
+	virtual void setResponseBodyCallback(FN_WRITED_CALLBACK cb, void* userData, bool writeBuff = false) override
 	{
 		m_bodyCallback = cb;
 		m_bodyUserData = userData;
+		m_bodyWriteBuff = writeBuff;
 	}
 
 	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) override
@@ -79,9 +83,9 @@ public:
 		m_maxRedirect = maxRedirect;
 	}
 
-	virtual void setDecompressIfGzip(bool decompressIfGzip) override
+	virtual void setResponseBodyAutoDecode(bool decode) override
 	{
-		m_decompressIfGzip = decompressIfGzip;
+		m_responseBodyDecode = decode;
 	}
 	
 	virtual void setRequestHeader(const char* key, const char* value) override
@@ -118,12 +122,12 @@ public:
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
-		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
-		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData, m_headerWriteBuff);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData, m_bodyWriteBuff);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
-		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
+		httpClient->SetResponseBodyAutoDecode(m_responseBodyDecode);
 				
 		bool b = httpClient->Do();
 
@@ -190,12 +194,12 @@ public:
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetHeader("Content-Type", contentType);
 		httpClient->SetCustomMethod(m_customMethod);
-		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
-		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData, m_headerWriteBuff);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData, m_bodyWriteBuff);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
-		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
+		httpClient->SetResponseBodyAutoDecode(m_responseBodyDecode);
 
 		std::string sData(content, contentLen);
 		httpClient->SetNormalPostData(sData);
@@ -325,12 +329,12 @@ public:
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
-		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
-		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData, m_headerWriteBuff);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData, m_bodyWriteBuff);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
-		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
+		httpClient->SetResponseBodyAutoDecode(m_responseBodyDecode);
 		if (nCountMultipartData == 0)
 		{//防止post空内容时出现411错误
 			httpClient->SetHeader("Content-Length", "0");
@@ -364,7 +368,7 @@ public:
 		downloader->SetUserAgent(m_userAgent);
 		downloader->SetHeaders(m_requestHeaders);
 		downloader->SetCustomMethod(m_customMethod);
-		downloader->SetHeaderCallback(m_headerCallback, m_headerUserData);
+		downloader->SetHeaderCallback(m_headerCallback, m_headerUserData, m_headerWriteBuff);
 		downloader->SetProgress(m_progressCallback, m_progressUserData);
 		downloader->SetAutoRedirect(m_autoRedirect);
 		downloader->SetMaxRedirect(m_maxRedirect);
@@ -396,12 +400,12 @@ public:
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
-		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
-		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData, m_headerWriteBuff);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData, m_bodyWriteBuff);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
-		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
+		httpClient->SetResponseBodyAutoDecode(m_responseBodyDecode);
 
 		if (dataLen == 0)
 		{//防止post空内容时出现411错误
@@ -435,13 +439,13 @@ public:
 		httpClient->SetUserAgent(m_userAgent);
 		httpClient->SetHeaders(m_requestHeaders);
 		httpClient->SetCustomMethod(m_customMethod);
-		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData);
-		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData);
+		httpClient->SetHeaderCallback(m_headerCallback, m_headerUserData, m_headerWriteBuff);
+		httpClient->SetBodyCallback(m_bodyCallback, m_bodyUserData, m_bodyWriteBuff);
 		httpClient->SetProgress(m_progressCallback, m_progressUserData);
 		httpClient->SetAutoRedirect(m_autoRedirect);
 		httpClient->SetMaxRedirect(m_maxRedirect);
 		httpClient->SetPutFile(filePath);
-		httpClient->SetDecompressIfGzip(m_decompressIfGzip);
+		httpClient->SetResponseBodyAutoDecode(m_responseBodyDecode);
 
 		bool b = httpClient->Do();
 
@@ -617,10 +621,10 @@ public:
 	}
 
 
-	virtual const char* WidebyteToAnsi(const wchar_t * strIn, size_t& inOutLen) override
+	virtual const char* UnicodeToAnsi(const wchar_t * strIn, size_t& inOutLen) override
 	{
 		std::string s;
-		if (!GL::WideByte2Ansi(s, std::wstring(strIn, inOutLen)))
+		if (!GL::Unicode2Ansi(s, std::wstring(strIn, inOutLen)))
 			m_convertBuffA.assign("");
 		else
 			m_convertBuffA.assign(s);
@@ -630,10 +634,10 @@ public:
 	}
 
 
-	virtual const wchar_t* AnsiToWidebyte(const char * strIn, size_t& inOutLen) override
+	virtual const wchar_t* AnsiToUnicode(const char * strIn, size_t& inOutLen) override
 	{
 		std::wstring s;
-		if (!GL::Ansi2WideByte(s, std::string(strIn, inOutLen)))
+		if (!GL::Ansi2Unicode(s, std::string(strIn, inOutLen)))
 			m_convertBuffW.assign(L"");
 		else
 			m_convertBuffW.assign(s);
@@ -655,10 +659,10 @@ public:
 	}
 
 
-	virtual const wchar_t* UTF8ToWidebyte(const char * strIn, size_t& inOutLen) override
+	virtual const wchar_t* UTF8ToUnicode(const char * strIn, size_t& inOutLen) override
 	{
 		std::wstring s;
-		if (!GL::Utf82WideByte(s, std::string(strIn, inOutLen)))
+		if (!GL::Utf82Unicode(s, std::string(strIn, inOutLen)))
 			m_convertBuffW.assign(L"");
 		else
 			m_convertBuffW.assign(s);
@@ -681,10 +685,10 @@ public:
 	}
 
 
-	virtual const char* WidebyteToUTF8(const wchar_t * strIn, size_t& inOutLen) override
+	virtual const char* UnicodeToUTF8(const wchar_t * strIn, size_t& inOutLen) override
 	{
 		std::string s;
-		if (!GL::WideByte2Utf8(s, std::wstring(strIn, inOutLen)))
+		if (!GL::Unicode2Utf8(s, std::wstring(strIn, inOutLen)))
 			m_convertBuffA.assign("");
 		else
 			m_convertBuffA.assign(s);
@@ -718,7 +722,7 @@ private:
 	bool m_autoRedirect;
 	int m_maxRedirect;
 
-	bool m_decompressIfGzip;
+	bool m_responseBodyDecode;
 
 	//int m_responseCode;
 	//std::string m_responseBody;
@@ -729,9 +733,11 @@ private:
 
 	FN_HEADER_CALLBACK m_headerCallback;
 	void* m_headerUserData;
+	bool m_headerWriteBuff;
 
 	FN_WRITED_CALLBACK m_bodyCallback;
 	void* m_bodyUserData;
+	bool m_bodyWriteBuff;
 
 	FN_PROGRESS_CALLBACK m_progressCallback;
 	void* m_progressUserData;
@@ -772,14 +778,14 @@ LIBCURLHTTP_API void setCustomMethod(LibcurlHttp* http, const char* method)
 	return http->setCustomMethod(method);
 }
 
-LIBCURLHTTP_API void setResponseHeaderCallback(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData)
+LIBCURLHTTP_API void setResponseHeaderCallback(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData, bool writeBuff)
 {
-	http->setResponseHeaderCallback(cb, userData);
+	http->setResponseHeaderCallback(cb, userData, writeBuff);
 }
 
-LIBCURLHTTP_API void setResponseBodyCallback(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData)
+LIBCURLHTTP_API void setResponseBodyCallback(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData, bool writeBuff)
 {
-	http->setResponseBodyCallback(cb, userData);
+	http->setResponseBodyCallback(cb, userData, writeBuff);
 }
 
 LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData)
@@ -797,9 +803,9 @@ LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect)
 	http->setMaxRedirect(maxRedirect);
 }
 
-LIBCURLHTTP_API void setDecompressIfGzip(LibcurlHttp* http, bool decompressIfGzip)
+LIBCURLHTTP_API void setResponseBodyAutoDecode(LibcurlHttp* http, bool decode)
 {
-	http->setDecompressIfGzip(decompressIfGzip);
+	http->setResponseBodyAutoDecode(decode);
 }
 
 LIBCURLHTTP_API bool get(LibcurlHttp* http, const char* url)
@@ -929,14 +935,14 @@ LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn,
 	return http->UrlUTF8Decode(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen)
+LIBCURLHTTP_API const char* UnicodeToAnsi(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen)
 {
-	return http->WidebyteToAnsi(strIn, inOutLen);
+	return http->UnicodeToAnsi(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
+LIBCURLHTTP_API const wchar_t* AnsiToUnicode(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->AnsiToWidebyte(strIn, inOutLen);
+	return http->AnsiToUnicode(strIn, inOutLen);
 }
 
 LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
@@ -944,9 +950,9 @@ LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn, si
 	return http->UTF8ToAnsi(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
+LIBCURLHTTP_API const wchar_t* UTF8ToUnicode(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
 {
-	return http->UTF8ToWidebyte(strIn, inOutLen);
+	return http->UTF8ToUnicode(strIn, inOutLen);
 }
 
 LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn, size_t& inOutLen)
@@ -954,8 +960,8 @@ LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn, si
 	return http->AnsiToUTF8(strIn, inOutLen);
 }
 
-LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen)
+LIBCURLHTTP_API const char* UnicodeToUTF8(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen)
 {
-	return http->WidebyteToUTF8(strIn, inOutLen);
+	return http->UnicodeToUTF8(strIn, inOutLen);
 }
 

@@ -65,29 +65,27 @@ bool Convert(std::string &out, const std::string& in, const char *tocode, const 
 }
 
 //unicode 转为 ansi
-bool WideByte2Ansi(std::string &out, const std::wstring& in, const char* locale/* = ""*/)
+bool Unicode2Ansi(std::string &out, const std::wstring& in, const char* locale/* = ""*/)
 {
+	setlocale(LC_ALL, locale);
+
 #if USE_WINDOWS
-	int ansiSize = WideCharToMultiByte(CP_OEMCP, 0, wstrcode, -1, NULL, 0, NULL, NULL);
-	if (ansiSize == ERROR_NO_UNICODE_TRANSLATION)
+	int ansiSize = WideCharToMultiByte(CP_OEMCP, 0, in.c_str(), in.size(), NULL, 0, NULL, NULL);
+	if (ansiSize <= 0)
 	{
-		//throw std::exception("Invalid UTF-8 sequence.");
-		return false;
-	}
-	if (ansiSize == 0)
-	{
-		//throw std::exception("Error in conversion.");
+		setlocale(LC_ALL, "");
 		return false;
 	}
 
 	out.resize(ansiSize);
-	int convresult = WideCharToMultiByte(CP_OEMCP, 0, wstrcode, -1, const_cast<char *>(out.c_str()), ansiSize, NULL, NULL);
-	if (convresult != ansiSize)
+	int convresult = WideCharToMultiByte(CP_OEMCP, 0, in.c_str(), in.size(), &out[0], ansiSize, NULL, NULL);
+	if (convresult <= 0)
 	{
-		//throw std::exception("La falla!");
+		setlocale(LC_ALL, "");
 		return false;
 	}
 
+	setlocale(LC_ALL, "");
 	return true;
 
 #else
@@ -99,7 +97,7 @@ bool WideByte2Ansi(std::string &out, const std::wstring& in, const char* locale/
 		return true;
 	}
 
-	setlocale(LC_ALL, locale);
+	
 	char* ar = new char[nLen + 1];
 	memset(ar, 0, nLen + 1);
 	size_t read = wcstombs(ar, in.c_str(), nLen);
@@ -114,37 +112,37 @@ bool WideByte2Ansi(std::string &out, const std::wstring& in, const char* locale/
 	}
 
 	delete[] ar;
+	
 	setlocale(LC_ALL, "");
-
 	return (read != (size_t)-1);
 
 #endif
 }
 
 //ansi 转 Unicode
-bool Ansi2WideByte(std::wstring& out, const std::string& in, const char* locale/* = ""*/)
+bool Ansi2Unicode(std::wstring& out, const std::string& in, const char* locale/* = ""*/)
 {
+	setlocale(LC_ALL, locale);
+
 #if USE_WINDOWS
-	int widesize = MultiByteToWideChar(CP_ACP, 0, strAnsi, -1, NULL, 0);
-	if (widesize == ERROR_NO_UNICODE_TRANSLATION)
+	int widesize = MultiByteToWideChar(CP_ACP, 0, in.c_str(), in.size(), NULL, 0);
+	if (widesize <= 0)
 	{
-		//throw std::exception("Invalid UTF-8 sequence.");
-		return false;
-	}
-	if (widesize == 0)
-	{
-		//throw std::exception("Error in conversion.");
+		//::GetLastError();
+		setlocale(LC_ALL, "");
 		return false;
 	}
 
 	out.resize(widesize);
-	int convresult = MultiByteToWideChar(CP_ACP, 0, strAnsi, -1, const_cast<wchar_t*>(out.c_str()), widesize);
-	if (convresult != widesize)
+	int convresult = MultiByteToWideChar(CP_ACP, 0, in.c_str(), in.size(), &out[0], widesize);
+	if (convresult <= 0)
 	{
-		//throw std::exception("La falla!");
+		//::GetLastError();
+		setlocale(LC_ALL, "");
 		return false;
 	}
 
+	setlocale(LC_ALL, "");
 	return true;
 #else
 
@@ -154,8 +152,7 @@ bool Ansi2WideByte(std::wstring& out, const std::string& in, const char* locale/
 		out.resize(0);
 		return true;
 	}
-
-	setlocale(LC_ALL, locale);
+		
 	wchar_t* ar = new wchar_t[nLen + 1];
 	memset(ar, 0, nLen + 1);
 	size_t read = mbstowcs(ar, in.c_str(), nLen);
@@ -178,20 +175,20 @@ bool Ansi2WideByte(std::wstring& out, const std::string& in, const char* locale/
 }
 
 //Unicode 转 UTF8
-bool WideByte2Utf8(std::string& out, const std::wstring& in, const char* locale/* = ""*/)
+bool Unicode2Utf8(std::string& out, const std::wstring& in, const char* locale/* = ""*/)
 {
-	if (!WideByte2Ansi(out, in, locale))
+	if (!Unicode2Ansi(out, in, locale))
 		return false;
 	return Convert(out, out, "UTF-8", "GBK");
 }
 
 //UTF8 转 Unicode
-bool Utf82WideByte(std::wstring& out, const std::string& in, const char* locale/* = ""*/)
+bool Utf82Unicode(std::wstring& out, const std::string& in, const char* locale/* = ""*/)
 {
 	std::string s;
 	if (!Convert(s, in, "GBK", "UTF-8"))
 		return false;
-	if (!Ansi2WideByte(out, s, locale))
+	if (!Ansi2Unicode(out, s, locale))
 		return false;
 	return true;
 }
@@ -199,17 +196,17 @@ bool Utf82WideByte(std::wstring& out, const std::string& in, const char* locale/
 bool Ansi2Utf8(std::string& out, const std::string& in, const char* locale/* = ""*/)
 {
 	std::wstring ws;
-	if (!Ansi2WideByte(ws, in, locale))
+	if (!Ansi2Unicode(ws, in, locale))
 		return false;
-	return WideByte2Utf8(out, ws.c_str(), locale);
+	return Unicode2Utf8(out, ws.c_str(), locale);
 }
 
 bool Utf82Ansi(std::string& out, const std::string& in, const char* locale/* = ""*/)
 {
 	std::wstring ws;
-	if (!Utf82WideByte(ws, in, locale))
+	if (!Utf82Unicode(ws, in, locale))
 		return false;
-	return WideByte2Ansi(out, ws.c_str(), locale);
+	return Unicode2Ansi(out, ws.c_str(), locale);
 }
 
 bool StrToHex(std::string& out, const std::string& in)
@@ -258,21 +255,21 @@ bool HexToStr(std::string& out, const std::string& in)
 bool StrToHex(std::wstring& out, const std::wstring& in)
 {
 	std::string ansi;
-	if (!WideByte2Ansi(ansi, in))
+	if (!Unicode2Ansi(ansi, in))
 		return false;
 	if (!StrToHex(ansi, ansi))
 		return false;
-	return Ansi2WideByte(out, ansi);
+	return Ansi2Unicode(out, ansi);
 }
 
 bool HexToStr(std::wstring& out, const std::wstring& in)
 {
 	std::string ansi;
-	if (!WideByte2Ansi(ansi, in))
+	if (!Unicode2Ansi(ansi, in))
 		return false;
 	if (!HexToStr(ansi, ansi))
 		return false;
-	return Ansi2WideByte(out, ansi);
+	return Ansi2Unicode(out, ansi);
 }
 
 }

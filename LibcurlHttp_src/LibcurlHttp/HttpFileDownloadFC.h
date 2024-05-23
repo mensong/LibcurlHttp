@@ -13,7 +13,7 @@ public:
 	HttpFileDownloadFC();
 	virtual ~HttpFileDownloadFC();
 
-	void SetHeaderCallback(FN_HEADER_CALLBACK cb, void* userData);
+	void SetHeaderCallback(FN_HEADER_CALLBACK cb, void* userData, bool writeBuff);
 	void SetProgress(FN_PROGRESS_CALLBACK progressCallback, void* userData);
 
 protected:
@@ -24,6 +24,7 @@ protected:
 private:
 	FN_HEADER_CALLBACK m_headerCallback;
 	void* m_userDataHeader;
+	bool m_headerWriteBuff;
 
 	FN_PROGRESS_CALLBACK m_progressCallback;
 	void* m_userDataProgress;

@@ -197,10 +197,10 @@ public:
 	//  DELETE PUT HEAD OPTIONS FUCK……，全大写
 	virtual void setCustomMethod(const char* method) = 0;
 
-	//设置header回调
-	virtual void setResponseHeaderCallback(FN_HEADER_CALLBACK cb, void* userData) = 0;
-	//设置body数据回调
-	virtual void setResponseBodyCallback(FN_WRITED_CALLBACK cb, void* userData) = 0;
+	//设置header回调 writeBuff - true:getResponseHeaderXXX可以获得数据；false:getResponseHeaderXXX将不能获得数据
+	virtual void setResponseHeaderCallback(FN_HEADER_CALLBACK cb, void* userData, bool writeBuff = true) = 0;
+	//设置body数据回调 writeBuff - true:getBody可以获得数据；false:getBody将不能获得数据
+	virtual void setResponseBodyCallback(FN_WRITED_CALLBACK cb, void* userData, bool writeBuff = false) = 0;
 	//设置进度回调
 	virtual void setProgress(FN_PROGRESS_CALLBACK progress, void* userData) = 0;
 	
@@ -209,8 +209,8 @@ public:
 	//设置自动重定向次数
 	virtual void setMaxRedirect(int maxRedirect) = 0;
 
-	//设置当response body的格式为GZIP时，是否解压。默认开启
-	virtual void setDecompressIfGzip(bool decompressIfGzip) = 0;
+	//设置response body的是否自动根据Content-Encoding自动解码。默认开启
+	virtual void setResponseBodyAutoDecode(bool decode) = 0;
 
 	//http get
 	virtual bool get(const char* url) = 0;
@@ -264,12 +264,12 @@ public:
 	virtual const char* UrlUTF8Decode(const char * strIn, size_t& inOutLen) = 0;
 
 	//字符转码
-	virtual const char* WidebyteToAnsi(const wchar_t * strIn, size_t& inOutLen) = 0;
-	virtual const wchar_t* AnsiToWidebyte(const char * strIn, size_t& inOutLen) = 0;
+	virtual const char* UnicodeToAnsi(const wchar_t * strIn, size_t& inOutLen) = 0;
+	virtual const wchar_t* AnsiToUnicode(const char * strIn, size_t& inOutLen) = 0;
 	virtual const char* UTF8ToAnsi(const char * strIn, size_t& inOutLen) = 0;
-	virtual const wchar_t* UTF8ToWidebyte(const char * strIn, size_t& inOutLen) = 0;
+	virtual const wchar_t* UTF8ToUnicode(const char * strIn, size_t& inOutLen) = 0;
 	virtual const char* AnsiToUTF8(const char * strIn, size_t& inOutLen) = 0;
-	virtual const char* WidebyteToUTF8(const wchar_t * strIn, size_t& inOutLen) = 0;
+	virtual const char* UnicodeToUTF8(const wchar_t * strIn, size_t& inOutLen) = 0;
 };
 
 
@@ -283,12 +283,12 @@ LIBCURLHTTP_API void setTimeout(LibcurlHttp* http, int timeout);
 LIBCURLHTTP_API void setRequestHeader(LibcurlHttp* http, const char* key, const char* value);
 LIBCURLHTTP_API void setUserAgent(LibcurlHttp* http, const char* val);
 LIBCURLHTTP_API void setCustomMethod(LibcurlHttp* http, const char* method);
-LIBCURLHTTP_API void setResponseHeaderCallback(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData);
-LIBCURLHTTP_API void setResponseBodyCallback(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData);
+LIBCURLHTTP_API void setResponseHeaderCallback(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData, bool writeBuff);
+LIBCURLHTTP_API void setResponseBodyCallback(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData, bool writeBuff);
 LIBCURLHTTP_API void setProgress(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 LIBCURLHTTP_API void setAutoRedirect(LibcurlHttp* http, bool autoRedirect);
 LIBCURLHTTP_API void setMaxRedirect(LibcurlHttp* http, int maxRedirect);
-LIBCURLHTTP_API void setDecompressIfGzip(LibcurlHttp* http, bool decompressIfGzip);
+LIBCURLHTTP_API void setResponseBodyAutoDecode(LibcurlHttp* http, bool decode);
 
 LIBCURLHTTP_API bool get(LibcurlHttp* http, const char* url);
 LIBCURLHTTP_API bool get_a(LibcurlHttp* http, const char* url, ...);
@@ -319,12 +319,12 @@ LIBCURLHTTP_API const char* UrlGB2312Decode(LibcurlHttp* http, const char * strI
 LIBCURLHTTP_API const char* UrlUTF8Encode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 LIBCURLHTTP_API const char* UrlUTF8Decode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 
-LIBCURLHTTP_API const char* WidebyteToAnsi(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
-LIBCURLHTTP_API const wchar_t* AnsiToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* UnicodeToAnsi(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const wchar_t* AnsiToUnicode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 LIBCURLHTTP_API const char* UTF8ToAnsi(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
-LIBCURLHTTP_API const wchar_t* UTF8ToWidebyte(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const wchar_t* UTF8ToUnicode(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 LIBCURLHTTP_API const char* AnsiToUTF8(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
-LIBCURLHTTP_API const char* WidebyteToUTF8(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
+LIBCURLHTTP_API const char* UnicodeToUTF8(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
 
 
 
@@ -339,12 +339,12 @@ public:
 	typedef void(*FN_setRequestHeader)(LibcurlHttp* http, const char* key, const char* value);
 	typedef void(*FN_setUserAgent)(LibcurlHttp* http, const char* val);
 	typedef void(*FN_setCustomMethod)(LibcurlHttp* http, const char* method);
-	typedef void(*FN_setResponseHeaderCallback)(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData);
-	typedef void(*FN_setResponseBodyCallback)(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData);
+	typedef void(*FN_setResponseHeaderCallback)(LibcurlHttp* http, FN_HEADER_CALLBACK cb, void* userData, bool writeBuff);
+	typedef void(*FN_setResponseBodyCallback)(LibcurlHttp* http, FN_WRITED_CALLBACK cb, void* userData, bool writeBuff);
 	typedef void(*FN_setProgress)(LibcurlHttp* http, FN_PROGRESS_CALLBACK progress, void* userData);
 	typedef void(*FN_setAutoRedirect)(LibcurlHttp* http, bool autoRedirect);
 	typedef void(*FN_setMaxRedirect)(LibcurlHttp* http, int maxRedirect);
-	typedef void(*FN_setDecompressIfGzip)(LibcurlHttp* http, bool decompressIfGzip);
+	typedef void(*FN_setResponseBodyAutoDecode)(LibcurlHttp* http, bool decode);
 	typedef bool(*FN_get)(LibcurlHttp* http, const char* url);
 	typedef bool(*FN_get_a)(LibcurlHttp* http, const char* url, ...);
 	typedef bool(*FN_post)(LibcurlHttp* http, const char* url, const char* content, size_t contentLen, const char* contentType);
@@ -366,12 +366,12 @@ public:
 	typedef const char* (*FN_UrlGB2312Decode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 	typedef const char* (*FN_UrlUTF8Encode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 	typedef const char* (*FN_UrlUTF8Decode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
-	typedef const char* (*FN_WidebyteToAnsi)(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
-	typedef const wchar_t* (*FN_AnsiToWidebyte)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const char* (*FN_UnicodeToAnsi)(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
+	typedef const wchar_t* (*FN_AnsiToUnicode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 	typedef const char* (*FN_UTF8ToAnsi)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
-	typedef const wchar_t* (*FN_UTF8ToWidebyte)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
+	typedef const wchar_t* (*FN_UTF8ToUnicode)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
 	typedef const char* (*FN_AnsiToUTF8)(LibcurlHttp* http, const char * strIn, size_t& inOutLen);
-	typedef const char* (*FN_WidebyteToUTF8)(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
+	typedef const char* (*FN_UnicodeToUTF8)(LibcurlHttp* http, const wchar_t * strIn, size_t& inOutLen);
 
 #define DEF_PROC(hDll, name) \
 	name = (FN_##name)::GetProcAddress(hDll, #name)
@@ -393,7 +393,7 @@ public:
 		DEF_PROC(hDll, setProgress);
 		DEF_PROC(hDll, setAutoRedirect);
 		DEF_PROC(hDll, setMaxRedirect); 
-		DEF_PROC(hDll, setDecompressIfGzip);
+		DEF_PROC(hDll, setResponseBodyAutoDecode);
 		DEF_PROC(hDll, get);
 		DEF_PROC(hDll, get_a);
 		DEF_PROC(hDll, post);
@@ -415,12 +415,12 @@ public:
 		DEF_PROC(hDll, UrlGB2312Decode);
 		DEF_PROC(hDll, UrlUTF8Encode);
 		DEF_PROC(hDll, UrlUTF8Decode);
-		DEF_PROC(hDll, WidebyteToAnsi);
-		DEF_PROC(hDll, AnsiToWidebyte);
+		DEF_PROC(hDll, UnicodeToAnsi);
+		DEF_PROC(hDll, AnsiToUnicode);
 		DEF_PROC(hDll, UTF8ToAnsi);
-		DEF_PROC(hDll, UTF8ToWidebyte);
+		DEF_PROC(hDll, UTF8ToUnicode);
 		DEF_PROC(hDll, AnsiToUTF8);
-		DEF_PROC(hDll, WidebyteToUTF8);
+		DEF_PROC(hDll, UnicodeToUTF8);
 	}
 	
 	FN_CreateHttp			CreateHttp;
@@ -434,7 +434,7 @@ public:
 	FN_setProgress			setProgress;
 	FN_setAutoRedirect		setAutoRedirect;
 	FN_setMaxRedirect		setMaxRedirect;
-	FN_setDecompressIfGzip	setDecompressIfGzip;
+	FN_setResponseBodyAutoDecode setResponseBodyAutoDecode;
 	FN_get					get;
 	FN_get_a				get_a;
 	FN_post					post;
@@ -456,12 +456,12 @@ public:
 	FN_UrlGB2312Decode		UrlGB2312Decode;
 	FN_UrlUTF8Encode		UrlUTF8Encode;
 	FN_UrlUTF8Decode		UrlUTF8Decode;
-	FN_WidebyteToAnsi		WidebyteToAnsi;
-	FN_AnsiToWidebyte		AnsiToWidebyte;
+	FN_UnicodeToAnsi		UnicodeToAnsi;
+	FN_AnsiToUnicode		AnsiToUnicode;
 	FN_UTF8ToAnsi			UTF8ToAnsi;
-	FN_UTF8ToWidebyte		UTF8ToWidebyte;
+	FN_UTF8ToUnicode		UTF8ToUnicode;
 	FN_AnsiToUTF8			AnsiToUTF8;
-	FN_WidebyteToUTF8		WidebyteToUTF8;
+	FN_UnicodeToUTF8		UnicodeToUTF8;
 	
 public:
 	~HTTP_CLIENT()

@@ -32,6 +32,7 @@
 CCurlUIDlg::CCurlUIDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CURLUI_DIALOG, pParent)
 	, m_running(true)
+	, m_isResponseBodyUtf8(true)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -60,6 +61,7 @@ void CCurlUIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_RESHEADER, m_editResponseHeader);
 	DDX_Control(pDX, IDC_PROG_PROGRESS, m_progress);
 	DDX_Control(pDX, IDC_TAB1, m_tabParams);
+	DDX_Control(pDX, IDC_CHK_SAVE_TO_FILE, m_chkSaveBodyToFile);
 }
 
 BEGIN_MESSAGE_MAP(CCurlUIDlg, CDialogEx)
@@ -69,6 +71,7 @@ BEGIN_MESSAGE_MAP(CCurlUIDlg, CDialogEx)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CCurlUIDlg::OnTcnSelchangeTab1)
 	ON_EN_CHANGE(IDC_EDIT_URL, &CCurlUIDlg::OnEnChangeEditUrl)
 	ON_NOTIFY(NM_CLICK, IDC_btnSetting, &CCurlUIDlg::OnNMClickbtnsetting)
+	ON_BN_CLICKED(IDC_CHK_SAVE_TO_FILE, &CCurlUIDlg::OnBnClickedChkSaveToFile)
 END_MESSAGE_MAP()
 
 
@@ -193,25 +196,35 @@ CString CCurlUIDlg::generateUrlByQueryParams(const CString& srcUrl)
 	auto kvs = dlg->GetQueryParams();
 
 	std::string sUrl = CW2A(srcUrl.GetString());
-	Url url(sUrl);
-	url.set_query().clear();
-		
-	for (size_t i = 0; i < kvs.size(); i++)
+
+	try
 	{
-		CString k = kvs[i].first;
-		if (k.IsEmpty())
-			continue;
-		CString v = kvs[i].second;
+		Url url(sUrl);
+		url.set_query().clear();
 
-		std::string s;
-		GL::WideByte2Ansi(s, k.GetString());
-		std::string sKey = UrlCoding::UrlUTF8Encode(s.c_str());
-		GL::WideByte2Ansi(s, v.GetString());
-		std::string sValue = UrlCoding::UrlUTF8Encode(s.c_str());
-		url.add_query(sKey.c_str(), sValue.c_str());
+		for (size_t i = 0; i < kvs.size(); i++)
+		{
+			CString k = kvs[i].first;
+			if (k.IsEmpty())
+				continue;
+			CString v = kvs[i].second;
+
+			std::string s;
+			GL::Unicode2Ansi(s, k.GetString());
+			std::string sKey = UrlCoding::UrlUTF8Encode(s.c_str());
+			GL::Unicode2Ansi(s, v.GetString());
+			std::string sValue = UrlCoding::UrlUTF8Encode(s.c_str());
+			url.add_query(sKey.c_str(), sValue.c_str());
+		}
+
+		sUrl = url.str();
 	}
+	catch (const std::exception&)
+	{
 
-	return CA2W(url.str().c_str());
+	}
+	
+	return CA2W(sUrl.c_str());
 }
 
 void CCurlUIDlg::refreshQueryParams()
@@ -282,7 +295,7 @@ void CCurlUIDlg::fillDefaultSetting(LibcurlHttp* http)
 	if (setting.autoRedirect)
 		http->setMaxRedirect(setting.autoRedirectMaxCount);
 
-	http->setDecompressIfGzip(setting.gzip);
+	http->setResponseBodyAutoDecode(setting.gzip);
 }
 
 bool CCurlUIDlg::_PROGRESS_CALLBACK(
@@ -317,50 +330,120 @@ bool CCurlUIDlg::_PROGRESS_CALLBACK(
 	return true;
 }
 
+bool CCurlUIDlg::_HEADER_CALLBACK(const char* header, void* userData)
+{
+	CCurlUIDlg* This = (CCurlUIDlg*)userData;
+	
+	CString sText;
+	This->m_editResponseHeader.GetWindowText(sText);
+	sText += CA2W(header);
+	This->m_editResponseHeader.SetWindowText(sText);
+
+	std::string sHeader = pystring::lower(header);
+	if (pystring::startswith(sHeader, "content-type:"))
+	{
+		if (sHeader.find("utf-8") != std::string::npos ||
+			sHeader.find("utf8") != std::string::npos)
+		{
+			This->m_isResponseBodyUtf8 = true;
+		}
+		else
+		{
+			This->m_isResponseBodyUtf8 = false;
+		}
+	}
+
+	//std::string headerKV = header;
+	//size_t seperator = headerKV.find_first_of(':');
+	//if (std::string::npos != seperator)
+	//{
+	//	std::string key = headerKV.substr(0, seperator);
+	//	key = pystring::strip(key);
+	//	if (pystring::equal(key, "Content-Length"))
+	//	{
+	//		std::string value = headerKV.substr(seperator + 1);
+	//		value = pystring::strip(value);
+	//		auto length = atoll(value.c_str());
+	//		if (length > 1024000)
+	//			g_isBodyTooLarge = true;
+	//		else
+	//			g_isBodyTooLarge = false;
+	//	}
+	//}
+	return true;
+}
+
+bool CCurlUIDlg::_WRITED_CALLBACK(void* pBuffer, size_t nSize, size_t nMemByte, void* userData)
+{
+	CCurlUIDlg* This = (CCurlUIDlg*)userData;
+
+	if (This->isFileSaveBodyValid())
+	{
+		This->m_fileSaveBody.Write(pBuffer, nSize * nMemByte);
+	}
+	else
+	{
+		CString sText;
+		This->m_editResponseBody.GetWindowText(sText);
+		if (sText.GetLength() > This->m_setting.GetSetting().showBodyMaxLength)
+			return true;
+
+		std::wstring ws;
+		if (This->m_isResponseBodyUtf8)
+			GL::Utf82Unicode(ws, std::string((const char*)pBuffer, nSize * nMemByte));
+		else
+			GL::Ansi2Unicode(ws, std::string((const char*)pBuffer, nSize * nMemByte));
+		sText += ws.c_str();
+		This->m_editResponseBody.SetWindowText(sText);
+	}
+
+	return true;
+}
+
 void CCurlUIDlg::dumpResponse(LibcurlHttp* http)
 {
-	std::string headers;
-	int headerCount = http->getResponseHeaderKeysCount();
-	for (int i = 0; i < headerCount; i++)
-	{
-		const char* key = http->getResponseHeaderKey(i);
-		if (!key)
-			continue;
+	//std::string headers;
+	//int headerCount = http->getResponseHeaderKeysCount();
+	//for (int i = 0; i < headerCount; i++)
+	//{
+	//	const char* key = http->getResponseHeaderKey(i);
+	//	if (!key)
+	//		continue;
 
-		std::string value;
-		int valueCount = http->getResponseHeadersCount(key);
-		for (int j = 0; j < valueCount; j++)
-		{
-			const char* pval = http->getResponseHeader(key, j);
-			if (!pval)
-				continue;
+	//	std::string value;
+	//	int valueCount = http->getResponseHeadersCount(key);
+	//	for (int j = 0; j < valueCount; j++)
+	//	{
+	//		const char* pval = http->getResponseHeader(key, j);
+	//		if (!pval)
+	//			continue;
 
-			if (!value.empty())
-				value += ';';
-			value += pval;
-		}
+	//		if (!value.empty())
+	//			value += ';';
+	//		value += pval;
+	//	}
 
-		if (pystring::startswith(key, "HTTP/"))
-			headers = key + std::string("\r\n") + headers;
-		else
-			headers += key + std::string(":") + value + "\r\n";
-	}
-	m_editResponseHeader.SetWindowText(CA2W(headers.c_str()));
+	//	if (pystring::startswith(key, "HTTP/"))
+	//		headers = key + std::string("\r\n") + headers;
+	//	else
+	//		headers += key + std::string(":") + value + "\r\n";
+	//}
+	//m_editResponseHeader.SetWindowText(CA2W(headers.c_str()));
 
-	size_t len = 0;
-	const char* pBody = http->getBody(len);
-	int showBodyMaxLength = m_setting.GetSetting().showBodyMaxLength;
-	bool bOver = false;
-	if (showBodyMaxLength >0 && len > showBodyMaxLength)
-	{
-		len = m_setting.GetSetting().showBodyMaxLength;
-		bOver = true;
-	}
-	const wchar_t* wBody = http->UTF8ToWidebyte(pBody, len);
-	CString sBody(wBody, len);
-	if (bOver)
-		sBody += L"...<内容超出>...";
-	m_editResponseBody.SetWindowTextW(sBody);
+	//size_t len = 0;
+	//const char* pBody = http->getBody(len);
+	//int showBodyMaxLength = m_setting.GetSetting().showBodyMaxLength;
+	//bool bOver = false;
+	//if (showBodyMaxLength >0 && len > showBodyMaxLength)
+	//{
+	//	len = m_setting.GetSetting().showBodyMaxLength;
+	//	bOver = true;
+	//}
+	//const wchar_t* wBody = http->UTF8ToUnicode(pBody, len);
+	//CString sBody(wBody, len);
+	//if (bOver)
+	//	sBody += L"...<内容超出>...";
+	//m_editResponseBody.SetWindowTextW(sBody);
 }
 
 void CCurlUIDlg::OnBnClickedBtnRun()
@@ -375,16 +458,35 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 	m_editUrl.GetWindowText(sUrl);
 	if (sUrl.IsEmpty())
 		return;
+		
+	if (m_chkSaveBodyToFile.GetCheck() && !m_saveBodyFilePath.IsEmpty())
+	{
+		if (isFileSaveBodyValid())
+			m_fileSaveBody.Close();
+		if (!m_fileSaveBody.Open(m_saveBodyFilePath,
+			CFile::OpenFlags::modeCreate |
+			CFile::OpenFlags::modeWrite |
+			CFile::OpenFlags::typeBinary))
+		{
+			return;
+		}
+	}
 
 	sUrl = generateUrlByQueryParams(sUrl);
 	auto headers = getHeaders();
+	
+	m_editResponseHeader.SetWindowText(_T(""));
+	m_editResponseBody.SetWindowText(_T(""));
 
 	LibcurlHttp* http = HTTP_CLIENT::Ins().CreateHttp();
 
 	fillDefaultSetting(http);
 	http->setCustomMethod(CW2A(sMethod));
+	http->setResponseBodyAutoDecode(true);
 	http->setProgress(_PROGRESS_CALLBACK, this);
-
+	http->setResponseHeaderCallback(_HEADER_CALLBACK, this, false);
+	http->setResponseBodyCallback(_WRITED_CALLBACK, this, false);
+	
 	for (size_t i = 0; i < headers.size(); i++)
 	{
 		http->setRequestHeader(CW2A(headers[i].first), CW2A(headers[i].second));
@@ -470,9 +572,20 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 
 	dumpResponse(http);
 
+	if (isFileSaveBodyValid())
+	{
+		m_editResponseBody.SetWindowText(_T("结果已保存到:") + m_saveBodyFilePath);
+		m_fileSaveBody.Close();
+	}
+
 	HTTP_CLIENT::Ins().ReleaseHttp(http);
 }
 
+
+bool CCurlUIDlg::isFileSaveBodyValid()
+{
+	return m_fileSaveBody.m_hFile && m_fileSaveBody.m_hFile != INVALID_HANDLE_VALUE;
+}
 
 void CCurlUIDlg::OnTcnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult)
 {
@@ -502,4 +615,61 @@ void CCurlUIDlg::OnNMClickbtnsetting(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	m_setting.DoModal();
 	*pResult = 0;
+}
+
+
+void CCurlUIDlg::OnBnClickedChkSaveToFile()
+{
+	if (!m_chkSaveBodyToFile.GetCheck())
+	{
+		m_saveBodyFilePath.Empty();
+		m_editResponseBody.SetWindowText(_T(""));
+		return;
+	}
+
+	OPENFILENAME ofn = { 0 };
+	TCHAR lpstrFilename[MAX_PATH * 20] = { 0 };
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = NULL;
+	ofn.lpstrFilter = _T("All Files(*.*)\0*.*\0\0");
+	ofn.lpstrFile = lpstrFilename;
+	ofn.nMaxFile = MAX_PATH * 20;
+	//ofn.lpstrInitialDir = TEXT("C:\\"); //初始化一个路径
+	ofn.Flags = OFN_HIDEREADONLY | OFN_FORCESHOWHIDDEN | OFN_PATHMUSTEXIST | OFN_EXPLORER/* | OFN_ALLOWMULTISELECT*/;
+
+	if (!GetOpenFileName(&ofn))
+	{
+		m_chkSaveBodyToFile.SetCheck(FALSE);
+		return;
+	}
+
+	TCHAR szDir[MAX_PATH] = { 0 };
+	TCHAR szName[128] = { 0 };
+	TCHAR szPath[MAX_PATH] = { 0 };
+	TCHAR* pos = lpstrFilename;
+
+	if (0 == lpstrFilename[_tcslen(lpstrFilename) + 1])// 只有一个文件
+	{
+		_tcscpy_s(szPath, MAX_PATH, lpstrFilename);
+	}
+	else
+	{
+		_tcscpy_s(szDir, MAX_PATH, lpstrFilename);
+		_tcscat_s(szDir, MAX_PATH, _T("\\"));
+
+		do
+		{
+			pos = &pos[_tcslen(pos)] + 1;
+			if (0 == *pos)
+				break;
+
+			_tcscpy_s(szPath, MAX_PATH, szDir);
+			_tcscat_s(szPath, MAX_PATH, pos);
+
+		} while (1);
+	}
+
+	m_saveBodyFilePath = szPath;
+	m_editResponseBody.SetWindowText(m_saveBodyFilePath);
 }
