@@ -385,7 +385,8 @@ bool CCurlUIDlg::_WRITED_CALLBACK(void* pBuffer, size_t nSize, size_t nMemByte, 
 	{
 		CString sText;
 		This->m_editResponseBody.GetWindowText(sText);
-		if (sText.GetLength() > This->m_setting.GetSetting().showBodyMaxLength)
+		int maxLen = This->m_setting.GetSetting().showBodyMaxLength;
+		if (maxLen > 0 && sText.GetLength() > maxLen)
 			return true;
 
 		std::wstring ws;
