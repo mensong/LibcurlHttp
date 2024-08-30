@@ -5,6 +5,12 @@
 #include <string>
 #include <stdint.h>
 
+#define MULTI_THREAD
+
+#ifdef MULTI_THREAD
+#include <mutex>
+#endif // MULTI_THREAD
+
 #ifdef LIBCURLHTTP_EXPORTS
 #define LIBCURLHTTP_API extern "C" __declspec(dllexport)
 #else
@@ -251,6 +257,7 @@ public:
 	virtual const char* getBody(size_t& len) = 0;
 	//获得提交后的返回code
 	virtual int getCode() = 0;
+	virtual int getHttpCode() = 0;
 	//获得Response headers
 	virtual int getResponseHeaderKeysCount() = 0;
 	virtual const char* getResponseHeaderKey(int i) = 0;
@@ -309,6 +316,7 @@ LIBCURLHTTP_API bool putFile(LibcurlHttp* http, const char* url, const char* fil
 
 LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, size_t& len);
 LIBCURLHTTP_API int getCode(LibcurlHttp* http);
+LIBCURLHTTP_API int getHttpCode(LibcurlHttp* http);
 LIBCURLHTTP_API int getResponseHeaderKeysCount(LibcurlHttp* http);
 LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i);
 LIBCURLHTTP_API int getResponseHeadersCount(LibcurlHttp* http, const char* key, bool ignoreCase);
@@ -358,6 +366,7 @@ public:
 	typedef bool (*FN_putFile)(LibcurlHttp* http, const char* url, const char* filePath);
 	typedef const char* (*FN_getBody)(LibcurlHttp* http, size_t& len);
 	typedef int(*FN_getCode)(LibcurlHttp* http);
+	typedef int(*FN_getHttpCode)(LibcurlHttp* http);
 	typedef int(*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
 	typedef const char* (*FN_getResponseHeaderKey)(LibcurlHttp* http, int i);
 	typedef int(*FN_getResponseHeadersCount)(LibcurlHttp* http, const char* key);
@@ -407,6 +416,7 @@ public:
 		DEF_PROC(hDll, putFile);
 		DEF_PROC(hDll, getBody);
 		DEF_PROC(hDll, getCode);
+		DEF_PROC(hDll, getHttpCode);
 		DEF_PROC(hDll, getResponseHeaderKeysCount);
 		DEF_PROC(hDll, getResponseHeaderKey);
 		DEF_PROC(hDll, getResponseHeadersCount);
@@ -448,6 +458,7 @@ public:
 	FN_putFile				putFile;
 	FN_getBody				getBody;
 	FN_getCode				getCode;
+	FN_getHttpCode			getHttpCode;
 	FN_getResponseHeaderKeysCount getResponseHeaderKeysCount;
 	FN_getResponseHeaderKey getResponseHeaderKey;
 	FN_getResponseHeadersCount getResponseHeadersCount;
@@ -475,6 +486,10 @@ public:
 
 	static HTTP_CLIENT& Ins()
 	{
+#ifdef MULTI_THREAD
+		std::lock_guard<std::mutex> _locker(s_insMutex);
+#endif // MULTI_THREAD
+
 		static HTTP_CLIENT s_ins;
 		return s_ins;
 	}
@@ -507,4 +522,12 @@ public:
 	}
 
 	HMODULE hDll;
+
+#ifdef MULTI_THREAD
+	static std::mutex s_insMutex;
+#endif // MULTI_THREAD
 };
+
+#ifdef MULTI_THREAD
+__declspec(selectany) std::mutex HTTP_CLIENT::s_insMutex;
+#endif // MULTI_THREAD

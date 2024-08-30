@@ -476,6 +476,15 @@ public:
 		return m_httpClient->GetCode();
 	}
 
+	virtual int getHttpCode() override
+	{
+		if (!hasWorkingHttpClient())
+		{
+			return -1;
+		}
+		return m_httpClient->GetHttpCode();
+	}
+
 	virtual int getResponseHeaderKeysCount() override
 	{
 		if (!hasWorkingHttpClient())
@@ -893,6 +902,11 @@ LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, size_t& len)
 LIBCURLHTTP_API int getCode(LibcurlHttp* http)
 {
 	return http->getCode();
+}
+
+LIBCURLHTTP_API int getHttpCode(LibcurlHttp* http)
+{
+	return http->getHttpCode();
 }
 
 LIBCURLHTTP_API int getResponseHeaderKeysCount(LibcurlHttp* http)
