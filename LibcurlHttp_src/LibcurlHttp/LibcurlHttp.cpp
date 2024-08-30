@@ -598,6 +598,9 @@ public:
 
 	const char* UrlGB2312Encode(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		std::string s = UrlCoding::UrlGB2312Encode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
 		inOutLen = m_convertBuffA.size();
@@ -606,6 +609,9 @@ public:
 
 	const char* UrlGB2312Decode(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		std::string s = UrlCoding::UrlGB2312Decode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
 		inOutLen = m_convertBuffA.size();
@@ -614,6 +620,9 @@ public:
 
 	virtual const char* UrlUTF8Encode(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		std::string s = UrlCoding::UrlUTF8Encode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
 		inOutLen = m_convertBuffA.size();
@@ -622,6 +631,9 @@ public:
 
 	virtual const char* UrlUTF8Decode(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		static std::string ms;
 		std::string s = UrlCoding::UrlUTF8Decode(std::string(strIn, inOutLen));
 		m_convertBuffA.assign(s);
@@ -632,6 +644,9 @@ public:
 
 	virtual const char* UnicodeToAnsi(const wchar_t * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = wcslen(strIn);
+
 		std::string s;
 		if (!GL::Unicode2Ansi(s, std::wstring(strIn, inOutLen)))
 			m_convertBuffA.assign("");
@@ -645,6 +660,9 @@ public:
 
 	virtual const wchar_t* AnsiToUnicode(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		std::wstring s;
 		if (!GL::Ansi2Unicode(s, std::string(strIn, inOutLen)))
 			m_convertBuffW.assign(L"");
@@ -657,6 +675,9 @@ public:
 
 	virtual const char* UTF8ToAnsi(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		std::string s;
 		if (!GL::Utf82Ansi(s, std::string(strIn, inOutLen)))
 			m_convertBuffA.assign("");
@@ -670,6 +691,9 @@ public:
 
 	virtual const wchar_t* UTF8ToUnicode(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		std::wstring s;
 		if (!GL::Utf82Unicode(s, std::string(strIn, inOutLen)))
 			m_convertBuffW.assign(L"");
@@ -683,6 +707,9 @@ public:
 
 	virtual const char* AnsiToUTF8(const char * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = strlen(strIn);
+
 		std::string s;
 		if (!GL::Ansi2Utf8(s, std::string(strIn, inOutLen)))
 			m_convertBuffA.assign("");
@@ -696,6 +723,9 @@ public:
 
 	virtual const char* UnicodeToUTF8(const wchar_t * strIn, size_t& inOutLen) override
 	{
+		if (inOutLen == 0)
+			inOutLen = wcslen(strIn);
+
 		std::string s;
 		if (!GL::Unicode2Utf8(s, std::wstring(strIn, inOutLen)))
 			m_convertBuffA.assign("");
