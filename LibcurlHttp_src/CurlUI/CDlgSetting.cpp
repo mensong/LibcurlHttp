@@ -63,11 +63,11 @@ void CDlgSetting::initProperties()
 	m_property.AddProperty(pMaxAutoRedirectCountItem);
 
 	CMFCPropertyGridProperty* pIsGZipItem = new CMFCPropertyGridProperty(
-		_T("必要时是否自动Gzip解包"),
-		m_setting.gzip ? _T("自动Gzip解包") : _T("不自动Gzip解包"),
+		_T("是否自动对结果解包"),
+		m_setting.autoDecodeResponse ? _T("自动解包") : _T("不自动解包"),
 		_T("内容如果经过Gzip压缩的，是否自动使用Gzip算法解压"));
-	pIsGZipItem->AddOption(_T("自动Gzip解包"));
-	pIsGZipItem->AddOption(_T("不自动Gzip解包"));
+	pIsGZipItem->AddOption(_T("自动解包"));
+	pIsGZipItem->AddOption(_T("不自动解包"));
 	pIsGZipItem->AllowEdit(FALSE);  //不允许对选项进行编辑
 	m_property.AddProperty(pIsGZipItem);
 
@@ -140,10 +140,10 @@ void CDlgSetting::OnBnClickedOk()
 		{
 			m_setting.autoRedirectMaxCount = _ttoi(prop->GetValue().bstrVal);
 		}
-		else if (name == _T("必要时是否自动Gzip解包"))
+		else if (name == _T("是否自动对结果解包"))
 		{
 			CString v = prop->GetValue().bstrVal;
-			m_setting.gzip = v == _T("自动Gzip解包");
+			m_setting.autoDecodeResponse = v == _T("自动解包");
 		}
 		else if (name == _T("界面上显示的数据最长长度"))
 		{

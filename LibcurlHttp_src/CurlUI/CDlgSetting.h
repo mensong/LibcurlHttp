@@ -13,7 +13,7 @@ struct GlobalSetting
 		_T("Safari/9999.9999");
 	bool autoRedirect = true;
 	int autoRedirectMaxCount = 3;
-	bool gzip = true;
+	bool autoDecodeResponse = true;
 	int showBodyMaxLength = 4096;
 };
 

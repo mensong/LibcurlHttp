@@ -295,7 +295,7 @@ void CCurlUIDlg::fillDefaultSetting(LibcurlHttp* http)
 	if (setting.autoRedirect)
 		http->setMaxRedirect(setting.autoRedirectMaxCount);
 
-	http->setResponseBodyAutoDecode(setting.gzip);
+	http->setResponseBodyAutoDecode(setting.autoDecodeResponse);
 }
 
 bool CCurlUIDlg::_PROGRESS_CALLBACK(
@@ -483,7 +483,6 @@ void CCurlUIDlg::OnBnClickedBtnRun()
 
 	fillDefaultSetting(http);
 	http->setCustomMethod(CW2A(sMethod));
-	http->setResponseBodyAutoDecode(true);
 	http->setProgress(_PROGRESS_CALLBACK, this);
 	http->setResponseHeaderCallback(_HEADER_CALLBACK, this, false);
 	http->setResponseBodyCallback(_WRITED_CALLBACK, this, false);

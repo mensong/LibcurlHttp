@@ -1,14 +1,20 @@
 @echo off
 
+cd /d "%~dp0"
+
 set logfile=build.log
 
 echo ============================ %~n0 ============================>%logfile%
 
-call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" amd64
-devenv "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Release|x64" >>%logfile%
-devenv "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Debug|x64" >>%logfile%
-devenv "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Release|x86" >>%logfile%
-devenv "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Debug|x86" >>%logfile%
+devenv.exe "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Release|x64" >>%logfile%
+devenv.exe "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Debug|x64" >>%logfile%
+devenv.exe "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Release|x86" >>%logfile%
+devenv.exe "LibcurlHttp.sln" /Project "LibcurlHttp" /Build "Debug|x86" >>%logfile%
+
+devenv.exe "LibcurlHttp.sln" /Project "CurlUI" /Build "Release|x64" >>%logfile%
+devenv.exe "LibcurlHttp.sln" /Project "CurlUI" /Build "Debug|x64" >>%logfile%
+devenv.exe "LibcurlHttp.sln" /Project "CurlUI" /Build "Release|x86" >>%logfile%
+devenv.exe "LibcurlHttp.sln" /Project "CurlUI" /Build "Debug|x86" >>%logfile%
 
 find "Ê§°Ü 1 ¸ö" %logfile%
 if %errorlevel% equ 0 (
