@@ -32,7 +32,7 @@ typedef struct MultipartField
 	char* fileName;		//指定文件名
 
 	char* multipartName;	//名称
-	char* mimeType;			//Mime type
+	char* mimeType;			//为NULL时自动设置。可为：application/x-www-form-urlencoded multipart/form-data text/plain
 
 	MultipartField()
 	{
