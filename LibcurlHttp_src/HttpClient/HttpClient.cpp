@@ -44,7 +44,7 @@ SslCurlWrapper HttpClient::s_sslObject;
 HttpClient::HttpClient()
 	: m_timeout(0)
 	, m_retCode(CURL_LAST)
-	, m_httpCode(-99999)
+	, m_httpCode(-1)
 	, m_autoRedirect(true)
 	, m_maxRedirect(5)
 	, m_isInnerPost(false)
