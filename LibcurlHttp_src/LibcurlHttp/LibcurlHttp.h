@@ -17,12 +17,6 @@
 #define LIBCURLHTTP_API extern "C" __declspec(dllimport)
 #endif
 
-typedef enum HttpDoErrorCode
-{
-	ecUrlError = -1,
-	ecDataError = -2,
-} HttpDoErrorCode;
-
 typedef struct MultipartField
 {
 	char* contenxtData;	//提交的是直接指定的内容，该字段有内容时，filePath字段无效

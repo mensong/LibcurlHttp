@@ -95,25 +95,27 @@ const std::string& HttpClient::GetHeader(const std::string& key) const
 
 bool HttpClient::Do()
 {
-	m_body.clear();
-
 	HttpClient* _THIS = this;
+
+	m_body.clear();
+	bool res = false;
+	m_httpCode = -1;
+	m_retCode = CURLcode::CURLE_OK;
 
 	const std::string& url = GetUrl();
 	if (url.c_str()[0] == '\0')
 	{
-		m_httpCode = HttpDoErrorCode::ecUrlError;
+		m_retCode = CURLcode::CURLE_LDAP_INVALID_URL;
 		return false;
 	}
-
-	bool res = false;
+		
 	CURL* curl = NULL;
 	struct curl_httppost* post = NULL;
 	curl_mime *mime = NULL;
 	curl_slist* headerList = NULL;
 	put_upload_ctx* upload_ctx = NULL;
 	FILE* putFile = NULL;
-
+	
 	do 
 	{
 		//初始化curl，这个是必须的
@@ -170,7 +172,7 @@ bool HttpClient::Do()
 			CURLcode code = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_httpCode = code;
+				m_retCode = code;
 				break;//return
 			}
 		}
@@ -233,17 +235,18 @@ bool HttpClient::Do()
 				CURLcode code = curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
 				if (code != CURLcode::CURLE_OK)
 				{
-					m_httpCode = code;
+					m_retCode = code;
 					break;//return
 				}
 			}
 			else
 			{
-				m_httpCode = HttpDoErrorCode::ecDataError;
+				m_retCode = CURLcode::CURLE_HTTP_POST_ERROR;
 				break;//return
 			}
 		}
-#endif		
+#endif
+		
 		if (m_postData.size() > 0)
 		{
 			sMethod = GetCustomMethod("POST");
@@ -253,13 +256,13 @@ bool HttpClient::Do()
 			CURLcode code = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, m_postData.c_str());
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_httpCode = code;
+				m_retCode = code;
 				break;//return
 			}
 			code = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, m_postData.size());
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_httpCode = code;
+				m_retCode = code;
 				break;//return
 			}
 		}
@@ -303,13 +306,13 @@ bool HttpClient::Do()
 				CURLcode code = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 				if (code != CURLcode::CURLE_OK)
 				{
-					m_httpCode = code;
+					m_retCode = code;
 					break;//return
 				}
 			}
 			else
 			{
-				m_httpCode = HttpDoErrorCode::ecDataError;
+				m_retCode = CURLcode::CURLE_HTTP_POST_ERROR;
 				break;//return
 			}
 		}
@@ -334,7 +337,7 @@ bool HttpClient::Do()
 				putFile = fopen(m_putFile.c_str(), "rb");
 				if (!putFile)
 				{
-					m_httpCode = CURLE_FILE_COULDNT_READ_FILE;
+					m_retCode = CURLcode::CURLE_FILE_COULDNT_READ_FILE;
 					break;//return
 				}
 
@@ -365,7 +368,7 @@ bool HttpClient::Do()
 			CURLcode code = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_httpCode = code;
+				m_retCode = code;
 				break;//return
 			}
 		}
@@ -375,7 +378,6 @@ bool HttpClient::Do()
 				
 		if (m_retCode != CURLE_OK)
 		{
-			m_httpCode = m_retCode;
 			//查看是否有出错信息
 			const char* pError = curl_easy_strerror(m_retCode);
 			if (pError)
@@ -412,7 +414,7 @@ bool HttpClient::Do()
 			if (code == CURLcode::CURLE_OK)
 				m_httpCode = static_cast<int>(http_code);
 			else
-				m_httpCode = code;
+				m_retCode = code;
 		}
 
 		OnDone(m_retCode);
