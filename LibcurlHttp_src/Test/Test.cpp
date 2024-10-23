@@ -79,7 +79,7 @@ bool HeaderCallback(const char* header, void* userData)
 
 void dumpCode(LibcurlHttp* http)
 {
-	printf("http_code=%d\n", http->getCode());
+	printf("http_code=%d\n", http->getErrorCode());
 }
 void dumpBody(LibcurlHttp* http, bool utf8 = true)
 {

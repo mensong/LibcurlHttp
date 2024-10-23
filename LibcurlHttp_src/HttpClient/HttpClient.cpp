@@ -43,7 +43,7 @@ SslCurlWrapper HttpClient::s_sslObject;
 
 HttpClient::HttpClient()
 	: m_timeout(0)
-	, m_retCode(CURL_LAST)
+	, m_errorCode(CURL_LAST)
 	, m_httpCode(-1)
 	, m_autoRedirect(true)
 	, m_maxRedirect(5)
@@ -100,12 +100,12 @@ bool HttpClient::Do()
 	m_body.clear();
 	bool res = false;
 	m_httpCode = -1;
-	m_retCode = CURLcode::CURLE_OK;
+	m_errorCode = CURLcode::CURL_LAST;
 
 	const std::string& url = GetUrl();
 	if (url.c_str()[0] == '\0')
 	{
-		m_retCode = CURLcode::CURLE_LDAP_INVALID_URL;
+		m_errorCode = CURLcode::CURLE_LDAP_INVALID_URL;
 		return false;
 	}
 		
@@ -172,7 +172,7 @@ bool HttpClient::Do()
 			CURLcode code = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_retCode = code;
+				m_errorCode = code;
 				break;//return
 			}
 		}
@@ -192,6 +192,7 @@ bool HttpClient::Do()
 
 		/** set body */
 		std::string sMethod;
+
 #if 0
 		if (m_formFields.size() > 0)
 		{
@@ -235,13 +236,13 @@ bool HttpClient::Do()
 				CURLcode code = curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
 				if (code != CURLcode::CURLE_OK)
 				{
-					m_retCode = code;
+					m_errorCode = code;
 					break;//return
 				}
 			}
 			else
 			{
-				m_retCode = CURLcode::CURLE_HTTP_POST_ERROR;
+				m_errorCode = CURLcode::CURLE_HTTP_POST_ERROR;
 				break;//return
 			}
 		}
@@ -256,13 +257,13 @@ bool HttpClient::Do()
 			CURLcode code = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, m_postData.c_str());
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_retCode = code;
+				m_errorCode = code;
 				break;//return
 			}
 			code = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, m_postData.size());
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_retCode = code;
+				m_errorCode = code;
 				break;//return
 			}
 		}
@@ -306,13 +307,13 @@ bool HttpClient::Do()
 				CURLcode code = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 				if (code != CURLcode::CURLE_OK)
 				{
-					m_retCode = code;
+					m_errorCode = code;
 					break;//return
 				}
 			}
 			else
 			{
-				m_retCode = CURLcode::CURLE_HTTP_POST_ERROR;
+				m_errorCode = CURLcode::CURLE_HTTP_POST_ERROR;
 				break;//return
 			}
 		}
@@ -337,7 +338,7 @@ bool HttpClient::Do()
 				putFile = fopen(m_putFile.c_str(), "rb");
 				if (!putFile)
 				{
-					m_retCode = CURLcode::CURLE_FILE_COULDNT_READ_FILE;
+					m_errorCode = CURLcode::CURLE_FILE_COULDNT_READ_FILE;
 					break;//return
 				}
 
@@ -368,18 +369,18 @@ bool HttpClient::Do()
 			CURLcode code = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, sMethod.c_str());
 			if (code != CURLcode::CURLE_OK)
 			{
-				m_retCode = code;
+				m_errorCode = code;
 				break;//return
 			}
 		}
 
 		/** 开始执行请求 */
-		m_retCode = curl_easy_perform(curl);
+		m_errorCode = curl_easy_perform(curl);
 				
-		if (m_retCode != CURLE_OK)
+		if (m_errorCode != CURLE_OK)
 		{
 			//查看是否有出错信息
-			const char* pError = curl_easy_strerror(m_retCode);
+			const char* pError = curl_easy_strerror(m_errorCode);
 			if (pError)
 				m_body = pError;
 		}
@@ -414,10 +415,10 @@ bool HttpClient::Do()
 			if (code == CURLcode::CURLE_OK)
 				m_httpCode = static_cast<int>(http_code);
 			else
-				m_retCode = code;
+				m_errorCode = code;
 		}
 
-		OnDone(m_retCode);
+		OnDone(m_errorCode);
 		res = true;
 
 	} while (0);

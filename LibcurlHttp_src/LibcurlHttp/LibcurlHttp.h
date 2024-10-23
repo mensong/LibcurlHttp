@@ -250,7 +250,7 @@ public:
 	//获得提交后的body内容
 	virtual const char* getBody(size_t& len) = 0;
 	//获得提交后的返回code
-	virtual int getCode() = 0;
+	virtual int getErrorCode() = 0;
 	virtual int getHttpCode() = 0;
 	//获得Response headers
 	virtual int getResponseHeaderKeysCount() = 0;
@@ -309,7 +309,7 @@ LIBCURLHTTP_API bool putData(LibcurlHttp* http, const char* url, const unsigned 
 LIBCURLHTTP_API bool putFile(LibcurlHttp* http, const char* url, const char* filePath);
 
 LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, size_t& len);
-LIBCURLHTTP_API int getCode(LibcurlHttp* http);
+LIBCURLHTTP_API int getErrorCode(LibcurlHttp* http);
 LIBCURLHTTP_API int getHttpCode(LibcurlHttp* http);
 LIBCURLHTTP_API int getResponseHeaderKeysCount(LibcurlHttp* http);
 LIBCURLHTTP_API const char* getResponseHeaderKey(LibcurlHttp* http, int i);
@@ -359,7 +359,7 @@ public:
 	typedef bool (*FN_putData)(LibcurlHttp* http, const char* url, const unsigned char* data, size_t dataLen);
 	typedef bool (*FN_putFile)(LibcurlHttp* http, const char* url, const char* filePath);
 	typedef const char* (*FN_getBody)(LibcurlHttp* http, size_t& len);
-	typedef int(*FN_getCode)(LibcurlHttp* http);
+	typedef int(*FN_getErrorCode)(LibcurlHttp* http);
 	typedef int(*FN_getHttpCode)(LibcurlHttp* http);
 	typedef int(*FN_getResponseHeaderKeysCount)(LibcurlHttp* http);
 	typedef const char* (*FN_getResponseHeaderKey)(LibcurlHttp* http, int i);
@@ -409,7 +409,7 @@ public:
 		DEF_PROC(hDll, putData);
 		DEF_PROC(hDll, putFile);
 		DEF_PROC(hDll, getBody);
-		DEF_PROC(hDll, getCode);
+		DEF_PROC(hDll, getErrorCode);
 		DEF_PROC(hDll, getHttpCode);
 		DEF_PROC(hDll, getResponseHeaderKeysCount);
 		DEF_PROC(hDll, getResponseHeaderKey);
@@ -451,7 +451,7 @@ public:
 	FN_putData				putData;
 	FN_putFile				putFile;
 	FN_getBody				getBody;
-	FN_getCode				getCode;
+	FN_getErrorCode			getErrorCode;
 	FN_getHttpCode			getHttpCode;
 	FN_getResponseHeaderKeysCount getResponseHeaderKeysCount;
 	FN_getResponseHeaderKey getResponseHeaderKey;

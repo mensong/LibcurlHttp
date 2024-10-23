@@ -95,7 +95,7 @@ public:
 	//开始处理
 	virtual bool Do();
 
-	virtual CURLcode GetCode() const { return m_retCode; }
+	virtual CURLcode GetErrorCode() const { return m_errorCode; }
 	virtual int GetHttpCode() const { return m_httpCode; }
 	virtual const std::string& GetBody() { return m_body; }
 	virtual const ResponseHeaderFields& GetResponseHeaders() { return m_responseHeaders; };
@@ -188,7 +188,7 @@ protected:
 	size_t m_putDataLen;
 	std::string m_putFile;
 
-	CURLcode m_retCode;
+	CURLcode m_errorCode;
 	/* 非正常的htto code解释
 		CURLE_UNSUPPORTED_PROTOCOL,		1 
 		CURLE_FAILED_INIT,				2 

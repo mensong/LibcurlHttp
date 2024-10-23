@@ -467,13 +467,13 @@ public:
 		return sBody.c_str();
 	}
 
-	virtual int getCode() override
+	virtual int getErrorCode() override
 	{
 		if (!hasWorkingHttpClient())
 		{
 			return -1;
 		}
-		return m_httpClient->GetCode();
+		return m_httpClient->GetErrorCode();
 	}
 
 	virtual int getHttpCode() override
@@ -929,9 +929,9 @@ LIBCURLHTTP_API const char* getBody(LibcurlHttp* http, size_t& len)
 	return http->getBody(len);
 }
 
-LIBCURLHTTP_API int getCode(LibcurlHttp* http)
+LIBCURLHTTP_API int getErrorCode(LibcurlHttp* http)
 {
-	return http->getCode();
+	return http->getErrorCode();
 }
 
 LIBCURLHTTP_API int getHttpCode(LibcurlHttp* http)
