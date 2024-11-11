@@ -189,7 +189,7 @@ protected:
 	std::string m_putFile;
 
 	CURLcode m_errorCode;
-	/* 非正常的htto code解释
+	/* 错误码如下:
 		CURLE_UNSUPPORTED_PROTOCOL,		1 
 		CURLE_FAILED_INIT,				2 
 		CURLE_URL_MALFORMAT,            3 
