@@ -70,12 +70,40 @@ void HttpFileDownload::closeFile()
 	}
 }
 
+long long HttpFileDownload::getCurrentTimeStamp()
+{
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft); // 获取当前系统时间
+
+	// 将FILETIME转换为64位整数
+	LONGLONG llTime = 0;
+	llTime |= ft.dwLowDateTime;
+	llTime |= (LONGLONG)ft.dwHighDateTime << 32;
+
+	// 转换为UNIX时间戳，即从1970年1月1日起的秒数
+	llTime -= 116444736000000000LL; // 注意这里的偏移量是针对100纳秒的FileTime
+
+	//llTime /= 10000000; // 转换为秒
+	//llTime /= 10000; // 转换为毫秒
+
+	return (int64_t)llTime;
+}
+
 std::string HttpFileDownload::getTimesampFileName()
 {
+	static long long lastTick = 0;
+	long long thisTick = getCurrentTimeStamp();
+	if (lastTick == thisTick)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		thisTick = getCurrentTimeStamp();
+	}
+	lastTick = thisTick;
+
 	std::stringstream ss;
 	ss << std::this_thread::get_id();
-	ss << "-";
-	ss << ::GetTickCount64();
+	ss << '-';
+	ss << thisTick;
 	ss << ".download";
 	return ss.str();
 }

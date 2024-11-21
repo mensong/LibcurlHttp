@@ -23,6 +23,7 @@ protected:
 	virtual void closeFile();
 
 protected:
+	long long getCurrentTimeStamp();
 	std::string getTimesampFileName();
 	bool createDirs(const std::string& dir);
 	std::string generateSaveFile(const std::string& dir = "");
